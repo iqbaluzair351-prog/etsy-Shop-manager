@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Etsy Shop Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent: #6C63FF;
+  --accent-dark: #5A52D5;
+  --accent-light: #EEF0FF;
+  --accent-glow: rgba(108,99,255,0.18);
+  --gold: #F5A623;
+  --gold-light: #FFF8EC;
+  --bg: #F0F2F8;
+  --sidebar-bg: #1A1D2E;
+  --sidebar-hover: rgba(255,255,255,0.07);
+  --sidebar-active: rgba(108,99,255,0.22);
+  --card: #FFFFFF;
+  --card2: #F7F8FC;
+  --text: #1A1D2E;
+  --muted: #8B90A7;
+  --border: rgba(0,0,0,0.06);
+  --green: #16A34A;
+  --green-bg: #DCFCE7;
+  --amber: #B45309;
+  --amber-bg: #FEF3C7;
+  --blue: #1D4ED8;
+  --blue-bg: #DBEAFE;
+  --red: #DC2626;
+  --red-bg: #FEE2E2;
+  --purple: #7C3AED;
+  --purple-bg: #EDE9FE;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 7px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 6px 16px rgba(0,0,0,0.06);
+  --shadow-card: 0 2px 8px rgba(26,29,46,0.07);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+h1,h2,h3,h4,.brand-name,.stat-val,.page-title { font-family: 'Outfit', sans-serif; }
+
+/* ── LAYOUT ── */
+.shell { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 252px;
+  background: var(--sidebar-bg);
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; bottom: 0;
+  z-index: 10;
+}
+.main { margin-left: 252px; padding: 2rem 2.25rem; flex: 1; }
+
+/* ── SIDEBAR ── */
+.brand {
+  padding: 1.5rem 1.4rem 1.2rem;
+  display: flex; align-items: center; gap: 11px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.brand-logo {
+  width: 38px; height: 38px;
+  background: linear-gradient(135deg, var(--accent), #9B8FFF);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.brand-name { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.2; letter-spacing: -0.2px; }
+.brand-sub { font-size: 10.5px; color: rgba(255,255,255,0.4); margin-top: 1px; }
+nav { padding: 1rem 0.8rem; flex: 1; overflow-y: auto; }
+.nav-label {
+  font-size: 9.5px; font-weight: 600; letter-spacing: 1px;
+  text-transform: uppercase; color: rgba(255,255,255,0.3);
+  padding: 0 8px; margin: 14px 0 5px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 12px;
+  border-radius: var(--radius-xs);
+  cursor: pointer; font-size: 13.5px;
+  color: rgba(255,255,255,0.55);
+  font-weight: 400; transition: all 0.15s;
+  margin-bottom: 1px;
+  border: none; background: transparent; width: 100%; text-align: left;
+}
+.nav-item:hover { background: var(--sidebar-hover); color: rgba(255,255,255,0.85); }
+.nav-item.active { background: var(--sidebar-active); color: #fff; font-weight: 600; }
+.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+.badge-pill {
+  margin-left: auto; background: var(--accent);
+  color: #fff; font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 99px;
+  font-family: 'Outfit', sans-serif; line-height: 1.4;
+}
+.sidebar-footer {
+  padding: 1rem 1.4rem;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  font-size: 11px; color: rgba(255,255,255,0.3);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sidebar-footer a { color: rgba(108,99,255,0.9); text-decoration: none; font-weight: 500; }
+.sidebar-footer a:hover { color: var(--accent); }
+.sync-status {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: rgba(255,255,255,0.35);
+}
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: #22C55E; flex-shrink: 0; }
+.sync-dot.syncing { background: var(--gold); animation: pulse 1.2s infinite; }
+.sync-dot.error { background: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* ── TAB ANIMATION ── */
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: slideIn 0.2s ease; }
+@keyframes slideIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── PAGE HEADER ── */
+.page-hd { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.75rem; }
+.page-title { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; }
+.page-sub { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+/* ── STATS GRID ── */
+.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 1.75rem; }
+.stat-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 1.3rem 1.4rem;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.stat-stripe {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 4px; border-radius: 4px 0 0 4px;
+}
+.stat-label { font-size: 11.5px; color: var(--muted); font-weight: 500; margin-bottom: 8px; }
+.stat-val { font-size: 28px; font-weight: 700; line-height: 1; letter-spacing: -0.5px; }
+.stat-sub { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+/* ── SECTION HDR ── */
+.section-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.9rem; }
+.section-hd h2 { font-size: 14px; font-weight: 600; letter-spacing: -0.1px; color: var(--text); }
+
+/* ── CARD ── */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.card-pad { padding: 1.4rem; }
+
+/* ── GREETING ── */
+.greeting-card {
+  background: linear-gradient(135deg, #1A1D2E 0%, #2D2F5E 100%);
+  border-radius: var(--radius);
+  padding: 1.6rem 1.8rem;
+  margin-bottom: 1.75rem;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 8px 24px rgba(26,29,46,0.2);
+}
+.greeting-left {}
+.greeting-name { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+.greeting-desc { font-size: 12.5px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+.greeting-right { text-align: right; }
+.greeting-date { font-size: 12px; color: rgba(255,255,255,0.4); }
+.greeting-badge {
+  display: inline-block; margin-top: 6px;
+  background: rgba(108,99,255,0.3); color: #BDB8FF;
+  font-size: 11px; font-weight: 600; padding: 4px 12px;
+  border-radius: 99px;
+}
+
+/* ── REMINDERS ── */
+.remind-item {
+  display: flex; align-items: flex-start; gap: 13px;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.remind-item:last-child { border-bottom: none; }
+.remind-item:hover { background: #FAFBFE; }
+.remind-icon {
+  width: 42px; height: 42px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; flex-shrink: 0;
+}
+.step1 { background: var(--blue-bg); }
+.step2 { background: var(--amber-bg); }
+.step3 { background: var(--purple-bg); }
+.remind-body { flex: 1; }
+.remind-name { font-weight: 600; font-size: 14px; color: var(--text); }
+.remind-product { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.remind-label { font-size: 12px; margin-top: 5px; font-weight: 600; }
+.lbl-s1 { color: var(--blue); }
+.lbl-s2 { color: var(--amber); }
+.lbl-s3 { color: var(--purple); }
+.remind-actions { display: flex; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
+
+/* ── BUTTONS ── */
+.btn {
+  font-size: 12.5px; padding: 7px 14px;
+  border-radius: var(--radius-xs);
+  border: 1.5px solid var(--border);
+  background: transparent; cursor: pointer;
+  color: var(--text); font-family: 'Inter', sans-serif;
+  font-weight: 500; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px;
+}
+.btn:hover { background: var(--bg); }
+.btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn.accent:hover { background: var(--accent-dark); }
+.btn.success { background: var(--green-bg); color: var(--green); border-color: transparent; }
+.btn.danger { color: var(--red); border-color: transparent; }
+.btn.danger:hover { background: var(--red-bg); }
+.btn.ghost { border-color: transparent; color: var(--muted); }
+.btn.ghost:hover { color: var(--text); background: var(--bg); }
+.btn-main {
+  width: 100%; padding: 12px; margin-top: 10px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 600;
+  cursor: pointer; font-family: 'Inter', sans-serif;
+  transition: background 0.15s; letter-spacing: -0.1px;
+}
+.btn-main:hover { background: var(--accent-dark); }
+.btn-export {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12.5px; padding: 7px 14px;
+  border-radius: var(--radius-xs);
+  border: 1.5px solid #E2E4EF;
+  background: var(--card); cursor: pointer;
+  color: var(--text); font-family: 'Inter', sans-serif; font-weight: 500;
+  transition: all 0.15s;
+}
+.btn-export:hover { background: var(--bg); }
+
+/* ── CUSTOMERS ── */
+.cust-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.cust-row:last-child { border-bottom: none; }
+.cust-row:hover { background: #FAFBFE; }
+.avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600; flex-shrink: 0;
+}
+.cust-info { flex: 1; min-width: 0; }
+.cust-name { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.cust-product { font-size: 11.5px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+.cust-meta { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.cust-delete-btn { background: transparent; border: none; cursor: pointer; font-size: 14px; opacity: 0.4; padding: 3px; border-radius: 5px; }
+.cust-delete-btn:hover { opacity: 1; background: var(--red-bg); }
+
+/* ── PILLS ── */
+.pill { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+.pill-green { background: var(--green-bg); color: var(--green); }
+.pill-amber { background: var(--amber-bg); color: var(--amber); }
+.pill-blue { background: var(--blue-bg); color: var(--blue); }
+.pill-red { background: var(--red-bg); color: var(--red); }
+.pill-gray { background: #EAECF4; color: #6B7080; }
+.pill-purple { background: var(--purple-bg); color: var(--purple); }
+
+/* ── PRODUCTS GRID ── */
+.prod-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.prod-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1.3rem;
+  box-shadow: var(--shadow-card);
+  display: flex; flex-direction: column; gap: 7px;
+  transition: box-shadow 0.15s, transform 0.15s;
+  position: relative;
+}
+.prod-card:hover { box-shadow: 0 4px 20px rgba(108,99,255,0.12); transform: translateY(-1px); }
+.prod-card-badge {
+  position: absolute; top: 12px; right: 12px;
+  font-size: 10px; font-weight: 700; padding: 3px 8px;
+  border-radius: 99px; background: var(--accent-light); color: var(--accent);
+}
+.prod-card-name { font-size: 13px; font-weight: 500; line-height: 1.4; color: var(--text); padding-right: 50px; }
+.prod-card-price { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; color: var(--accent); }
+.prod-card-orig { font-size: 12px; color: var(--muted); text-decoration: line-through; }
+.prod-card-actions { display: flex; gap: 6px; margin-top: 4px; }
+.btn-edit {
+  font-size: 11px; padding: 4px 11px;
+  border-radius: 6px; border: 1px solid var(--border);
+  background: transparent; cursor: pointer; color: var(--muted);
+  font-family: 'Inter', sans-serif; transition: all 0.12s;
+}
+.btn-edit:hover { background: var(--bg); color: var(--text); }
+
+/* ── FORM ── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-grid.full { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group label { font-size: 12px; color: var(--muted); font-weight: 500; }
+.form-group input, .form-group select, .form-group textarea {
+  padding: 10px 13px; border: 1.5px solid #E2E4EF;
+  border-radius: var(--radius-xs); font-size: 14px;
+  font-family: 'Inter', sans-serif; color: var(--text);
+  background: #fff; transition: border 0.15s; outline: none;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* ── SALES CHART ── */
+.chart-bars {
+  display: flex; align-items: flex-end; gap: 8px;
+  height: 130px; padding: 0 0 4px;
+}
+.bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
+.bar {
+  width: 100%; background: linear-gradient(180deg, var(--accent) 0%, #9B8FFF 100%);
+  border-radius: 5px 5px 0 0; min-height: 4px;
+}
+.bar-label { font-size: 10px; color: var(--muted); }
+.bar-val { font-size: 10px; color: var(--text); font-weight: 600; }
+
+/* ── PRODUCT SALES ── */
+.prod-sale-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 1.25rem; border-bottom: 1px solid var(--border);
+}
+.prod-sale-row:last-child { border-bottom: none; }
+.prod-sale-name { font-size: 13px; font-weight: 500; color: var(--text); }
+.prod-sale-count { font-size: 11px; color: var(--muted); }
+.prod-sale-rev { font-size: 13px; font-weight: 700; color: var(--green); flex-shrink: 0; }
+.prog { height: 3px; background: #EAECF4; border-radius: 2px; margin-top: 4px; }
+.prog-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+
+/* ── SEARCH + FILTERS ── */
+.search-filter-row { display: flex; gap: 10px; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+.search-wrap { position: relative; flex: 1; min-width: 200px; }
+.search-wrap input {
+  width: 100%; padding: 9px 12px 9px 36px;
+  border: 1.5px solid #E2E4EF; border-radius: var(--radius-xs);
+  font-size: 13.5px; font-family: 'Inter', sans-serif; outline: none;
+}
+.search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.filter-chips { display: flex; gap: 5px; }
+.chip {
+  font-size: 12px; padding: 6px 13px; border-radius: 99px;
+  border: 1.5px solid #E2E4EF; background: #fff;
+  cursor: pointer; transition: all 0.12s; font-weight: 500; color: var(--muted);
+}
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ── MODAL ── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(10,10,30,0.5); z-index: 100;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(3px);
+}
+.overlay.open { display: flex; }
+.modal {
+  background: var(--card); border-radius: 20px;
+  padding: 1.6rem; width: 92%; max-width: 480px;
+  box-shadow: 0 24px 60px rgba(10,10,30,0.2);
+  animation: modalIn 0.2s ease;
+}
+@keyframes modalIn { from{opacity:0;transform:scale(0.97)translateY(8px)} to{opacity:1;transform:none} }
+.modal-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.1rem;
+}
+.modal-hd h3 { font-size: 16px; font-weight: 700; color: var(--text); }
+.btn-close {
+  background: var(--bg); border: none; cursor: pointer;
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--muted); transition: all 0.12s;
+}
+.btn-close:hover { background: var(--border); color: var(--text); }
+.msg-area {
+  width: 100%; min-height: 135px;
+  padding: 11px 13px; border: 1.5px solid #E2E4EF;
+  border-radius: var(--radius-xs); font-size: 13px; line-height: 1.65;
+  font-family: 'Inter', sans-serif; color: var(--text);
+  resize: none; background: var(--card2);
+}
+.modal-actions { display: flex; gap: 8px; margin-top: 12px; }
+.btn-copy-msg {
+  flex: 1; padding: 11px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: var(--radius-xs);
+  font-size: 13.5px; font-weight: 600;
+  cursor: pointer; font-family: 'Inter', sans-serif;
+  transition: background 0.15s;
+}
+.btn-copy-msg:hover { background: var(--accent-dark); }
+.btn-cancel {
+  padding: 11px 18px; border: 1.5px solid #E2E4EF;
+  border-radius: var(--radius-xs); background: transparent;
+  cursor: pointer; font-size: 13px; color: var(--muted);
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── SYNC BANNER ── */
+.sync-banner {
+  background: var(--accent-light);
+  border: 1.5px solid rgba(108,99,255,0.2);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 1.2rem; font-size: 13px;
+}
+.sync-banner.success { background: var(--green-bg); border-color: rgba(22,163,74,0.2); color: var(--green); }
+.sync-banner.error { background: var(--red-bg); border-color: rgba(220,38,38,0.2); color: var(--red); }
+
+/* ── EMPTY STATE ── */
+.empty-state { text-align: center; padding: 3rem 1rem; color: var(--muted); font-size: 14px; }
+.empty-icon { font-size: 42px; margin-bottom: 10px; opacity: 0.6; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem;
+  background: #1A1D2E; color: #fff;
+  padding: 11px 18px; border-radius: 10px;
+  font-size: 13px; opacity: 0; pointer-events: none;
+  transition: opacity 0.3s; z-index: 999;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.toast.show { opacity: 1; }
+
+/* ── CONFIRM ── */
+.confirm-icon { text-align: center; font-size: 40px; margin-bottom: 8px; }
+.confirm-title { text-align: center; font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.confirm-sub { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 1.2rem; line-height: 1.5; }
+.confirm-actions { display: flex; gap: 8px; }
+.btn-confirm-del {
+  flex: 1; padding: 11px; background: var(--red);
+  color: #fff; border: none; border-radius: var(--radius-xs);
+  font-size: 13.5px; font-weight: 600; cursor: pointer;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── BOTTOM NAV (mobile) ── */
+.bottom-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--sidebar-bg);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  z-index: 50;
+  padding: 0 4px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.bottom-nav-inner { display: flex; }
+.bnav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 3px; padding: 10px 4px 8px;
+  background: transparent; border: none; cursor: pointer;
+  color: rgba(255,255,255,0.4); transition: color 0.15s; font-size: 10px;
+  font-family: 'Inter', sans-serif; font-weight: 500; position: relative;
+}
+.bnav-item svg { width: 22px; height: 22px; }
+.bnav-item.active { color: var(--accent); }
+.bnav-item .bnav-badge {
+  position: absolute; top: 6px; right: calc(50% - 16px);
+  background: #EF4444; color: #fff;
+  font-size: 9px; font-weight: 700;
+  width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){ .prod-grid { grid-template-columns: 1fr; } }
+@media(max-width:768px){
+  .sidebar { display: none; }
+  .bottom-nav { display: block; }
+  .main {
+    margin-left: 0;
+    padding: 1rem;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.25rem; }
+  .stat-card { padding: 1rem 1rem; }
+  .stat-val { font-size: 22px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .greeting-card { flex-direction: column; gap: 10px; padding: 1.2rem 1.4rem; }
+  .greeting-name { font-size: 17px; }
+  .greeting-right { text-align: left; }
+  .page-title { font-size: 18px; }
+  .page-hd { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .page-hd > div:last-child { width: 100%; }
+  .page-hd .btn-export, .page-hd > div[style] { width: 100%; }
+  .page-hd > div[style] { display: flex; gap: 8px; }
+  .section-hd h2 { font-size: 13px; }
+  div[style*="grid-template-columns:1fr 1fr"] { grid-template-columns: 1fr !important; }
+  div[style*="grid-template-columns:1.1fr 1fr"] { grid-template-columns: 1fr !important; }
+  .search-filter-row { flex-direction: column; align-items: stretch; }
+  .filter-chips { flex-wrap: wrap; }
+  .remind-actions { flex-wrap: wrap; }
+  .remind-item { gap: 10px; padding: 0.85rem 1rem; }
+  .cust-row { padding: 0.8rem 1rem; gap: 10px; }
+  .cust-product { max-width: 160px; }
+  .prod-card { padding: 1rem; }
+  .modal { width: 95%; padding: 1.3rem; }
+  .card-pad { padding: 1rem; }
+  .toast { left: 1rem; right: 1rem; bottom: calc(75px + env(safe-area-inset-bottom,0px)); text-align: center; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-logo">🛍️</div>
+    <div>
+      <div class="brand-name">Etsy Shop Manager</div>
+      <div class="brand-sub">Follow-up & Analytics</div>
+    </div>
+  </div>
+  <nav>
+    <div class="nav-label">Overview</div>
+    <button class="nav-item active" onclick="gotoTab('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" onclick="gotoTab('sales')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Sales Analytics
+    </button>
+    <div class="nav-label">Customers</div>
+    <button class="nav-item" onclick="gotoTab('reminders')" id="nav-reminders">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      Reminders
+      <span class="badge-pill" id="reminderBadge" style="display:none">0</span>
+    </button>
+    <button class="nav-item" onclick="gotoTab('add')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Add Customer
+    </button>
+    <button class="nav-item" onclick="gotoTab('customers')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      All Customers
+    </button>
+    <div class="nav-label">Catalog</div>
+    <button class="nav-item" onclick="gotoTab('products')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      My Products
+      <span class="badge-pill" id="syncBadge" style="display:none;background:var(--gold)">sync</span>
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sync-status">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncStatusText">Data saved locally</span>
+    </div>
+    <a href="https://www.etsy.com/shop/brightdigilab" target="_blank">↗ Open Etsy Shop</a>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main">
+
+  <!-- DASHBOARD -->
+  <div class="tab-content active" id="tab-dashboard">
+    <div class="greeting-card">
+      <div class="greeting-left">
+        <div class="greeting-name" id="greetingText">Good morning! 👋</div>
+        <div class="greeting-desc">Here's what's happening in your shop today.</div>
+      </div>
+      <div class="greeting-right">
+        <div class="greeting-date" id="todayDate"></div>
+        <div class="greeting-badge" id="greetingBadge">0 reminders today</div>
+      </div>
+    </div>
+    <div class="stats-grid" id="dashStats"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <div class="section-hd"><h2>Today's Reminders</h2><button class="btn ghost" onclick="gotoTab('reminders')" style="font-size:12px">See all →</button></div>
+        <div class="card"><div id="dashReminders"></div></div>
+      </div>
+      <div>
+        <div class="section-hd"><h2>Recent Customers</h2><button class="btn ghost" onclick="gotoTab('customers')" style="font-size:12px">See all →</button></div>
+        <div class="card"><div id="dashRecent"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REMINDERS -->
+  <div class="tab-content" id="tab-reminders">
+    <div class="page-hd">
+      <div><div class="page-title">Reminders 🔔</div><div class="page-sub">Customers waiting for follow-up</div></div>
+    </div>
+    <div class="card"><div id="remindersList"></div></div>
+  </div>
+
+  <!-- ADD CUSTOMER -->
+  <div class="tab-content" id="tab-add">
+    <div class="page-hd">
+      <div><div class="page-title">Add Customer ➕</div><div class="page-sub">Track a new purchase and start follow-up flow</div></div>
+    </div>
+    <div class="card card-pad" style="max-width:620px;">
+      <div class="form-grid" style="margin-bottom:14px;">
+        <div class="form-group">
+          <label>Customer Name *</label>
+          <input type="text" id="fName" placeholder="e.g. Ahmad Khan">
+        </div>
+        <div class="form-group">
+          <label>Etsy Username (optional)</label>
+          <input type="text" id="fUser" placeholder="@username">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>Select Product *</label>
+        <select id="fProduct"></select>
+      </div>
+      <div class="form-grid" style="margin-bottom:14px;">
+        <div class="form-group">
+          <label>Purchase Date *</label>
+          <input type="date" id="fDate">
+        </div>
+        <div class="form-group">
+          <label>Sale Price ($)</label>
+          <input type="number" id="fPrice" placeholder="Auto-filled" step="0.01">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Note (optional)</label>
+        <input type="text" id="fNote" placeholder="Any special notes...">
+      </div>
+      <button class="btn-main" onclick="addCustomer()">✅ Add Customer</button>
+    </div>
+  </div>
+
+  <!-- ALL CUSTOMERS -->
+  <div class="tab-content" id="tab-customers">
+    <div class="page-hd">
+      <div><div class="page-title">All Customers 👥</div><div class="page-sub" id="custCountLabel">Loading...</div></div>
+      <button class="btn-export" onclick="exportCSV()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+    </div>
+    <div class="search-filter-row">
+      <div class="search-wrap">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="custSearch" placeholder="Search by name or product..." oninput="renderCustomers()">
+      </div>
+      <div class="filter-chips">
+        <span class="chip active" onclick="setFilter('all',this)">All</span>
+        <span class="chip" onclick="setFilter('new',this)">New</span>
+        <span class="chip" onclick="setFilter('pending',this)">Pending</span>
+        <span class="chip" onclick="setFilter('done',this)">Reviewed</span>
+      </div>
+    </div>
+    <div class="card"><div id="custList"></div></div>
+  </div>
+
+  <!-- MY PRODUCTS -->
+  <div class="tab-content" id="tab-products">
+    <div class="page-hd">
+      <div><div class="page-title">My Products 🛒</div><div class="page-sub" id="prodCount">Loading...</div></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-export" onclick="syncFromEtsy()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Sync from Etsy
+        </button>
+        <button class="btn accent" onclick="openAddProduct()">+ Add Product</button>
+      </div>
+    </div>
+    <div id="syncBanner" style="display:none"></div>
+    <div class="prod-grid" id="prodGrid"></div>
+  </div>
+
+  <!-- SALES -->
+  <div class="tab-content" id="tab-sales">
+    <div class="page-hd">
+      <div><div class="page-title">Sales Analytics 📊</div><div class="page-sub">Revenue overview and product performance</div></div>
+    </div>
+    <div class="stats-grid" id="salesStats"></div>
+    <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:16px;">
+      <div>
+        <div class="section-hd"><h2>Monthly Revenue (6 months)</h2></div>
+        <div class="card card-pad"><div class="chart-bars" id="salesChart"></div></div>
+      </div>
+      <div>
+        <div class="section-hd"><h2>Top Products</h2></div>
+        <div class="card"><div id="salesByProd"></div></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+<div class="overlay" id="msgOverlay" onclick="closeMsgModal(event)">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3 id="msgModalTitle">Message</h3>
+      <button class="btn-close" onclick="closeMsgModalDirect()">✕</button>
+    </div>
+    <textarea class="msg-area" id="msgArea" readonly></textarea>
+    <div class="modal-actions">
+      <button class="btn-copy-msg" onclick="copyMsgAndMark()">📋 Copy & Mark Sent</button>
+      <button class="btn-cancel" onclick="closeMsgModalDirect()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="addProdOverlay" onclick="closeProdModal(event)">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>Add New Product 🛍️</h3>
+      <button class="btn-close" onclick="closeProdModalDirect()">✕</button>
+    </div>
+    <div class="form-grid full" style="gap:12px;">
+      <div class="form-group"><label>Product Name *</label><input type="text" id="pName" placeholder="e.g. Smart RSI Indicator Pro"></div>
+      <div class="form-group"><label>Sale Price ($) *</label><input type="number" id="pSalePrice" placeholder="29.99" step="0.01"></div>
+      <div class="form-group"><label>Original Price ($)</label><input type="number" id="pOrigPrice" placeholder="39.99 (optional)" step="0.01"></div>
+      <div class="form-group"><label>Etsy Listing URL</label><input type="text" id="pUrl" placeholder="https://www.etsy.com/listing/..."></div>
+    </div>
+    <button class="btn-main" onclick="saveNewProduct()">✅ Save Product</button>
+  </div>
+</div>
+
+<div class="overlay" id="confirmOverlay" onclick="closeConfirmModal(event)">
+  <div class="modal" style="max-width:370px;">
+    <div class="confirm-icon">🗑️</div>
+    <div class="confirm-title">Delete Customer?</div>
+    <div class="confirm-sub" id="confirmSubText">This will permanently remove the customer and follow-up history.</div>
+    <div class="confirm-actions">
+      <button class="btn-cancel" style="flex:1" onclick="closeConfirmModalDirect()">Cancel</button>
+      <button class="btn-confirm-del" onclick="confirmDeleteAction()">Yes, Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- BOTTOM NAV mobile -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bnav-item active" onclick="gotoTab('dashboard')" data-tab="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Home
+    </button>
+    <button class="bnav-item" onclick="gotoTab('reminders')" data-tab="reminders">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="bnav-badge" id="bnavBadge" style="display:none">0</span>
+      Remind
+    </button>
+    <button class="bnav-item" onclick="gotoTab('add')" data-tab="add">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Add
+    </button>
+    <button class="bnav-item" onclick="gotoTab('customers')" data-tab="customers">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      People
+    </button>
+    <button class="bnav-item" onclick="gotoTab('sales')" data-tab="sales">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Sales
+    </button>
+  </div>
+</nav>
+
+<script>
+// ─── DEFAULT PRODUCTS ──────────────────────────────────────────────────────
+const DEFAULT_PRODUCTS = [
+  { id:'dp1',  name:'EFC Forex Indicator for MT4 – Buy/Sell Signals with Dashboard',        salePrice:18.75, origPrice:25.00,  url:'https://www.etsy.com/listing/4503557930/' },
+  { id:'dp2',  name:'Algo Indicator Buy Sell Signals for TradingView | Crypto Forex Stocks', salePrice:18.75, origPrice:25.00,  url:'https://www.etsy.com/listing/4500329557/' },
+  { id:'dp3',  name:'Forex Trading Journal Excel Spreadsheet | P&L, Win Rate, Risk Analytics',salePrice:12.75, origPrice:17.00, url:'https://www.etsy.com/listing/4502376328/' },
+  { id:'dp4',  name:'GainzAlgo V2 Alpha Trading Indicator | Non-Repaint Buy Sell (TradingView)',salePrice:31.57,origPrice:42.09,url:'https://www.etsy.com/listing/4485302088/' },
+  { id:'dp5',  name:'Scalper Pro TradingView Indicator | Forex Crypto Stocks | Non-Repaint', salePrice:44.25, origPrice:59.00, url:'https://www.etsy.com/listing/4499175772/' },
+  { id:'dp6',  name:'Mayfair FX Scalping Indicator V10 | Non-Repaint Buy/Sell | Forex Gold', salePrice:42.00, origPrice:56.00, url:'https://www.etsy.com/listing/4496190122/' },
+  { id:'dp7',  name:'Automated NAS100 Forex Robot – MT4 Scalping Bot, Prop Firm EA',         salePrice:37.50, origPrice:50.00, url:'https://www.etsy.com/listing/4477101528/' },
+  { id:'dp8',  name:'99% Accurate MT4 Binary Options Indicator – Real-Time Signals',         salePrice:36.75, origPrice:49.00, url:'https://www.etsy.com/listing/4481809362/' },
+  { id:'dp9',  name:'Trend Line Pro EA MT4 | Automated Forex Robot, Gold Trading Bot',       salePrice:29.25, origPrice:39.00, url:'https://www.etsy.com/listing/4480491135/' },
+  { id:'dp10', name:'Papeda EA Scalping Bot MT4 | XAUUSD Strategy | Prop Firm',              salePrice:48.00, origPrice:64.00, url:'https://www.etsy.com/listing/4471835260/' },
+  { id:'dp11', name:'TradingView Binary Options Indicator | Non-Repaint Buy Sell Signals',   salePrice:60.75, origPrice:81.00, url:'https://www.etsy.com/listing/4472785620/' },
+  { id:'dp12', name:'Nexus SPA Style Trading Indicator | 90+ Accuracy Buy Sell Signals',     salePrice:29.77, origPrice:39.70, url:'https://www.etsy.com/listing/4471297242/' },
+  { id:'dp13', name:'99% Accurate TradingView Indicator V8 | Forex, Crypto, Stocks Alerts',  salePrice:52.20, origPrice:69.60, url:'https://www.etsy.com/listing/4454464789/' },
+  { id:'dp14', name:'TradingView Indicator Bundle | Buy/Sell Signals & Alerts',              salePrice:180.00,origPrice:240.00,url:'https://www.etsy.com/listing/4458373607/' },
+  { id:'dp15', name:'TradingView Indicator Base Version | Non-Repaint, Crypto, Forex, Stocks',salePrice:35.25,origPrice:47.00, url:'https://www.etsy.com/listing/4455079115/' },
+];
+
+// ─── SUPABASE CONFIG ───────────────────────────────────────────────────────
+const SB_URL = 'https://ahrthihtkczxymzpcwly.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFocnRoaWh0a2N6eHltenBjd2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MjA1MzMsImV4cCI6MjA5NDM5NjUzM30.hgcRZ0d4E0dl_0BpFwzVoviHuBURsmyFmp3-KGR69uA';
+
+async function sbFetch(path, opts={}) {
+  const res = await fetch(SB_URL + '/rest/v1/' + path, {
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || 'return=representation',
+      ...opts.headers
+    },
+    ...opts
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+// ─── IN-MEMORY CACHE (fast UI, cloud backup) ───────────────────────────────
+let _customers = null;
+let _customProducts = null;
+let _dbReady = false;
+
+// ─── DB INIT: create tables if not exist via RPC isn't available,
+//     so we do a test fetch and show setup instructions if needed
+async function initDB() {
+  setSyncStatus('connecting', 'Supabase se connect ho raha hai...');
+  try {
+    // Test customers table
+    await sbFetch('customers?limit=1', { method: 'GET', prefer: '' });
+    _dbReady = true;
+    setSyncStatus('ok', 'Cloud se connected ✓');
+    await loadAllFromCloud();
+  } catch(e) {
+    // Tables don't exist yet — show SQL setup banner
+    _dbReady = false;
+    setSyncStatus('error', 'Tables setup karo');
+    showSetupBanner();
+    // Fall back to localStorage
+    _customers = JSON.parse(localStorage.getItem('esm_customers')||'[]');
+    _customProducts = JSON.parse(localStorage.getItem('esm_products')||'[]');
+    renderAll();
+  }
+}
+
+function showSetupBanner() {
+  const sql = `-- Supabase SQL Editor mein ye paste karo:
+CREATE TABLE customers (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  username TEXT,
+  product_id TEXT,
+  product_name TEXT,
+  price NUMERIC,
+  purchase_date DATE,
+  note TEXT,
+  msg1_sent BOOLEAN DEFAULT FALSE,
+  msg2_sent BOOLEAN DEFAULT FALSE,
+  msg3_sent BOOLEAN DEFAULT FALSE,
+  review_done BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE custom_products (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  sale_price NUMERIC,
+  orig_price NUMERIC,
+  url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Row Level Security disable karo (apna private tool hai)
+ALTER TABLE customers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE custom_products DISABLE ROW LEVEL SECURITY;`;
+
+  // Show in a modal
+  const existing = document.getElementById('setupModal');
+  if (existing) return;
+  const div = document.createElement('div');
+  div.id = 'setupModal';
+  div.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,30,0.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)';
+  div.innerHTML = `<div style="background:#fff;border-radius:20px;padding:1.5rem;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,0.3)">
+    <div style="font-family:Outfit,sans-serif;font-size:17px;font-weight:700;margin-bottom:6px">⚙️ Ek baar setup karo</div>
+    <div style="font-size:13px;color:#8B90A7;margin-bottom:14px;line-height:1.6">Supabase mein ye SQL run karo — sirf ek baar karna hai. Phir sab devices pe data sync hoga!</div>
+    <div style="font-size:12px;color:#6B7280;margin-bottom:8px;font-weight:600">1. supabase.com → apna project → SQL Editor → New Query</div>
+    <textarea readonly style="width:100%;height:220px;font-size:11px;font-family:monospace;padding:10px;border:1.5px solid #E2E4EF;border-radius:8px;background:#F7F8FC;resize:none;line-height:1.5">${sql}</textarea>
+    <div style="font-size:12px;color:#6B7280;margin:10px 0 4px;font-weight:600">2. "Run" button dabao → phir ye button dabao:</div>
+    <button onclick="retryDB()" style="width:100%;padding:12px;background:#6C63FF;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px">✅ Tables ban gayi — Connect Karo!</button>
+    <button onclick="copySQL()" style="width:100%;padding:10px;background:transparent;color:#6C63FF;border:1.5px solid #6C63FF;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-top:8px">📋 SQL Copy Karo</button>
+  </div>`;
+  document.body.appendChild(div);
+
+  window.copySQL = () => {
+    navigator.clipboard.writeText(sql).then(()=>toast('✅ SQL copied!')).catch(()=>toast('Manual copy karo'));
+  };
+}
+
+async function retryDB() {
+  const modal = document.getElementById('setupModal');
+  if (modal) modal.remove();
+  await initDB();
+}
+
+// ─── CLOUD LOAD/SAVE ───────────────────────────────────────────────────────
+async function loadAllFromCloud() {
+  try {
+    setSyncStatus('syncing', 'Data load ho raha hai...');
+    const [custs, prods] = await Promise.all([
+      sbFetch('customers?order=created_at.desc', { method:'GET', prefer:'' }),
+      sbFetch('custom_products?order=created_at.desc', { method:'GET', prefer:'' })
+    ]);
+    _customers = custs.map(r=>({
+      id: r.id, name: r.name, user: r.username||'',
+      productId: r.product_id||'', productName: r.product_name||'',
+      price: parseFloat(r.price)||0, purchaseDate: r.purchase_date||'',
+      note: r.note||'',
+      msg1Sent: r.msg1_sent, msg2Sent: r.msg2_sent, msg3Sent: r.msg3_sent,
+      reviewDone: r.review_done
+    }));
+    _customProducts = prods.map(r=>({
+      id: r.id, name: r.name,
+      salePrice: parseFloat(r.sale_price)||0,
+      origPrice: parseFloat(r.orig_price)||0,
+      url: r.url||'', custom: true
+    }));
+    // Also save to localStorage as offline cache
+    localStorage.setItem('esm_customers', JSON.stringify(_customers));
+    localStorage.setItem('esm_products', JSON.stringify(_customProducts));
+    setSyncStatus('ok', 'Cloud synced ✓ ' + new Date().toLocaleTimeString());
+    renderAll();
+  } catch(e) {
+    console.error('Load error:', e);
+    setSyncStatus('error', 'Load failed — local data use ho rahi hai');
+    _customers = JSON.parse(localStorage.getItem('esm_customers')||'[]');
+    _customProducts = JSON.parse(localStorage.getItem('esm_products')||'[]');
+    renderAll();
+  }
+}
+
+function setSyncStatus(type, msg) {
+  const dot = document.getElementById('syncDot');
+  const txt = document.getElementById('syncStatusText');
+  if (dot) dot.className = 'sync-dot' + (type==='syncing'?' syncing':type==='error'?' error':'');
+  if (txt) txt.textContent = msg;
+}
+
+// ─── STORAGE API (replaces localStorage calls) ─────────────────────────────
+function loadProducts() {
+  const custom = _customProducts || JSON.parse(localStorage.getItem('esm_products')||'[]');
+  const customIds = custom.map(p=>p.id);
+  return [...DEFAULT_PRODUCTS.filter(d=>!customIds.includes(d.id)), ...custom];
+}
+
+async function saveProducts(prods) {
+  const custom = prods.filter(p=>!DEFAULT_PRODUCTS.find(d=>d.id===p.id));
+  _customProducts = custom;
+  localStorage.setItem('esm_products', JSON.stringify(custom));
+  if (!_dbReady) return;
+  // Upsert to Supabase
+  try {
+    const rows = custom.map(p=>({
+      id: p.id, name: p.name,
+      sale_price: p.salePrice, orig_price: p.origPrice, url: p.url||''
+    }));
+    if (rows.length > 0) {
+      await sbFetch('custom_products', {
+        method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates' },
+        body: JSON.stringify(rows)
+      });
+    }
+  } catch(e) { console.error('Save products error:', e); }
+}
+
+function loadCustomers() {
+  return _customers || JSON.parse(localStorage.getItem('esm_customers')||'[]');
+}
+
+async function saveCustomers(customers) {
+  _customers = customers;
+  localStorage.setItem('esm_customers', JSON.stringify(customers));
+  // We save individually in add/update functions below
+}
+
+async function upsertCustomer(c) {
+  if (!_dbReady) return;
+  try {
+    await sbFetch('customers', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify({
+        id: c.id, name: c.name, username: c.user||'',
+        product_id: c.productId||'', product_name: c.productName||'',
+        price: c.price||0, purchase_date: c.purchaseDate||'',
+        note: c.note||'',
+        msg1_sent: c.msg1Sent||false, msg2_sent: c.msg2Sent||false,
+        msg3_sent: c.msg3Sent||false, review_done: c.reviewDone||false
+      })
+    });
+  } catch(e) { console.error('Upsert customer error:', e); }
+}
+
+async function deleteCustomerFromDB(id) {
+  if (!_dbReady) return;
+  try {
+    await sbFetch('customers?id=eq.'+id, { method: 'DELETE', prefer: '' });
+  } catch(e) { console.error('Delete error:', e); }
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+function daysSince(d) {
+  const now=new Date(); now.setHours(0,0,0,0);
+  const t=new Date(d); t.setHours(0,0,0,0);
+  return Math.round((now-t)/864e5);
+}
+function initials(n) { return n.trim().split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2)||'?'; }
+const AV=[['#DBEAFE','#1D4ED8'],['#DCFCE7','#16A34A'],['#FEF3C7','#B45309'],['#FEE2E2','#DC2626'],['#EDE9FE','#7C3AED'],['#FCE7F3','#BE185D']];
+function avCol(n) { return AV[(n.charCodeAt(0)||0)%AV.length]; }
+function getStep(c) {
+  if(c.reviewDone) return 'done';
+  const d=daysSince(c.purchaseDate);
+  if(d>=1&&!c.msg1Sent) return 'step1';
+  if(d>=2&&c.msg1Sent&&!c.msg2Sent) return 'step2';
+  if(d>=4&&c.msg2Sent&&!c.msg3Sent) return 'step3';
+  if(d<1) return 'new';
+  return 'waiting';
+}
+function toast(msg) {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+function sn(s,max=30) { return s.length>max?s.slice(0,max)+'…':s; }
+function fmt$(n) { return '$'+parseFloat(n).toFixed(2); }
+
+// ─── GREETING ──────────────────────────────────────────────────────────────
+function initGreeting() {
+  const h=new Date().getHours();
+  const g=h<12?'Good morning!':h<17?'Good afternoon!':'Good evening!';
+  document.getElementById('greetingText').textContent=g+' 👋';
+  const opts={weekday:'long',year:'numeric',month:'long',day:'numeric'};
+  document.getElementById('todayDate').textContent=new Date().toLocaleDateString('en-US',opts);
+}
+
+// ─── ETSY LIVE SYNC ────────────────────────────────────────────────────────
+// Uses Etsy's public listing data (no auth needed for public shop listings)
+async function syncFromEtsy() {
+  const dot=document.getElementById('syncDot');
+  const st=document.getElementById('syncStatusText');
+  const banner=document.getElementById('syncBanner');
+  dot.className='sync-dot syncing';
+  st.textContent='Syncing from Etsy...';
+  banner.style.display='flex';
+  banner.className='sync-banner';
+  banner.innerHTML='<span>🔄</span><span>Etsy shop se products sync ho rahe hain...</span>';
+
+  // Etsy public listings scrape via allorigins proxy (CORS bypass, public data only)
+  const shopName='brightdigilab';
+  const proxyUrl=`https://api.allorigins.win/get?url=${encodeURIComponent('https://www.etsy.com/shop/'+shopName+'?ref=simple-shop-header-name&listing_id=0')}`;
+
+  try {
+    const resp=await fetch(proxyUrl,{signal:AbortSignal.timeout(12000)});
+    const data=await resp.json();
+    const html=data.contents||'';
+
+    // Parse listing data from Etsy page JSON-LD or embedded data
+    const listings=parseEtsyListings(html);
+
+    if(listings.length>0) {
+      // Merge with existing custom products
+      const existing=loadProducts();
+      const existingUrls=existing.map(p=>p.url||'');
+      let newCount=0;
+
+      listings.forEach(l=>{
+        const urlMatch=existingUrls.find(u=>u.includes(l.id));
+        if(!urlMatch) {
+          // new listing found — add it
+          const np={
+            id:'sync_'+l.id, name:l.name,
+            salePrice:l.price, origPrice:l.origPrice||l.price,
+            url:'https://www.etsy.com/listing/'+l.id+'/',
+            custom:true, synced:true
+          };
+          existing.push(np); newCount++;
+        }
+      });
+
+      if(newCount>0) {
+        saveProducts(existing);
+        dot.className='sync-dot';
+        st.textContent='Synced from Etsy';
+        banner.className='sync-banner success';
+        banner.innerHTML=`<span>✅</span><span>${newCount} naya product add ho gaya Etsy shop se!</span>`;
+        toast(`✅ ${newCount} new product(s) synced!`);
+      } else {
+        dot.className='sync-dot';
+        st.textContent='Already up to date';
+        banner.className='sync-banner success';
+        banner.innerHTML='<span>✅</span><span>Sab products already up to date hain!</span>';
+        toast('✅ Products already up to date!');
+      }
+    } else {
+      // Fallback: couldn't parse but no error
+      dot.className='sync-dot';
+      st.textContent='Sync attempted';
+      banner.className='sync-banner';
+      banner.innerHTML='<span>ℹ️</span><span>Etsy ne abhi data nahi diya. Manually product add karo ya thodi der baad retry karo.</span>';
+    }
+  } catch(err) {
+    dot.className='sync-dot error';
+    st.textContent='Sync failed';
+    banner.className='sync-banner error';
+    banner.innerHTML='<span>⚠️</span><span>Sync nahi hua (Etsy CORS block karta hai browser pe). Manually product add karo below.</span>';
+  }
+  renderAll();
+  setTimeout(()=>{ banner.style.display='none'; dot.className='sync-dot'; st.textContent='Data saved locally'; },6000);
+}
+
+function parseEtsyListings(html) {
+  const listings=[];
+  try {
+    // Method 1: JSON-LD schema
+    const ldMatches=html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)||[];
+    ldMatches.forEach(s=>{
+      try {
+        const j=JSON.parse(s.replace(/<script[^>]*>|<\/script>/g,'').trim());
+        if(j['@type']==='Product'||j['@type']==='ItemList') {
+          const items=j.itemListElement||[j];
+          items.forEach(item=>{
+            const p=item.item||item;
+            if(p.name&&p.offers) {
+              const offer=Array.isArray(p.offers)?p.offers[0]:p.offers;
+              const urlParts=(p.url||'').match(/listing\/(\d+)/);
+              if(urlParts) listings.push({id:urlParts[1],name:p.name,price:parseFloat(offer.price)||0});
+            }
+          });
+        }
+      } catch(e){}
+    });
+    // Method 2: listing IDs from HTML
+    if(listings.length===0) {
+      const idMatches=html.match(/listing\/(\d{7,12})/g)||[];
+      const unique=[...new Set(idMatches.map(m=>m.replace('listing/','')))]
+        .slice(0,20);
+      unique.forEach(id=>{ if(!listings.find(l=>l.id===id)) listings.push({id,name:'',price:0}); });
+    }
+  } catch(e){}
+  return listings.filter(l=>l.id);
+}
+
+// ─── TEMPLATES ─────────────────────────────────────────────────────────────
+function msgTemplate(step,c,pname) {
+  const fn=c.name.split(' ')[0];
+  if(step==='step1') return `Hi ${fn}! 👋\n\nHope you're doing great! Just checking in — how's the ${pname} working for you so far?\n\nIf you have any questions or need help with setup, message me anytime. I'm always here! 😊\n\nWishing you great trades ahead! 🚀\n— Etsy Shop Manager`;
+  if(step==='step2') return `Hi ${fn}! 😊\n\nI hope the ${pname} has been helpful for your trading!\n\nIf you've had a chance to use it, I'd really appreciate a quick review on Etsy — it takes 30 seconds and means so much to small sellers like me. 🙏\n\nReview link: https://www.etsy.com/shop/brightdigilab\n\nThank you so much!\n— Etsy Shop Manager`;
+  if(step==='step3') return `Hi ${fn}! 🎁\n\nThank you so much for your purchase of ${pname}!\n\nAs a special thank-you, I'm sending you a FREE bonus indicator — just reply and I'll send it over right away!\n\nAlso, if you've enjoyed the product, a quick honest review would mean the world to my shop. 🌟\n\nhttps://www.etsy.com/shop/brightdigilab\n\nThank you!\n— Etsy Shop Manager`;
+  return '';
+}
+
+// ─── MODAL: MESSAGE ────────────────────────────────────────────────────────
+let _mCustId=null,_mStep=null;
+function openMsgModal(custId,step) {
+  const c=loadCustomers().find(x=>x.id===custId); if(!c) return;
+  const p=loadProducts().find(x=>x.id===c.productId);
+  const pname=p?p.name:(c.productName||'your indicator');
+  const titles={step1:'Day 1 — Feedback Check-in',step2:'Day 2 — Review Request',step3:'Day 4 — Bonus + Review'};
+  document.getElementById('msgModalTitle').textContent=titles[step]||'Message';
+  document.getElementById('msgArea').value=msgTemplate(step,c,pname);
+  document.getElementById('msgOverlay').classList.add('open');
+  _mCustId=custId; _mStep=step;
+}
+function closeMsgModal(e){if(e.target===document.getElementById('msgOverlay'))closeMsgModalDirect();}
+function closeMsgModalDirect(){document.getElementById('msgOverlay').classList.remove('open');}
+function copyMsgAndMark(){
+  navigator.clipboard.writeText(document.getElementById('msgArea').value).then(()=>{
+    const cs=loadCustomers(), c=cs.find(x=>x.id===_mCustId);
+    if(c){if(_mStep==='step1')c.msg1Sent=true;if(_mStep==='step2')c.msg2Sent=true;if(_mStep==='step3')c.msg3Sent=true;saveCustomers(cs);}
+    toast('✅ Copied and marked as sent!'); closeMsgModalDirect(); renderAll();
+  }).catch(()=>toast('Manual copy: Ctrl+A then Ctrl+C'));
+}
+
+// ─── MODAL: PRODUCT ────────────────────────────────────────────────────────
+function openAddProduct(){document.getElementById('addProdOverlay').classList.add('open');}
+function closeProdModal(e){if(e.target===document.getElementById('addProdOverlay'))closeProdModalDirect();}
+function closeProdModalDirect(){document.getElementById('addProdOverlay').classList.remove('open');}
+function saveNewProduct(){
+  const name=document.getElementById('pName').value.trim();
+  const sp=parseFloat(document.getElementById('pSalePrice').value);
+  const op=parseFloat(document.getElementById('pOrigPrice').value)||sp;
+  const url=document.getElementById('pUrl').value.trim();
+  if(!name||isNaN(sp)){toast('⚠️ Name and price required!');return;}
+  const prods=loadProducts();
+  prods.push({id:'cp'+Date.now(),name,salePrice:sp,origPrice:op,url,custom:true});
+  saveProducts(prods);
+  ['pName','pSalePrice','pOrigPrice','pUrl'].forEach(id=>document.getElementById(id).value='');
+  closeProdModalDirect(); toast('✅ Product added!'); renderAll();
+}
+function deleteProduct(id){
+  const p=loadProducts(); const i=p.findIndex(x=>x.id===id); if(i===-1)return;
+  p.splice(i,1); saveProducts(p); toast('🗑️ Product removed.'); renderAll();
+}
+
+// ─── MODAL: CONFIRM DELETE ─────────────────────────────────────────────────
+let _delId=null;
+function confirmDeleteCustomer(id,name){
+  _delId=id;
+  document.getElementById('confirmSubText').textContent=`"${name}" will be permanently removed.`;
+  document.getElementById('confirmOverlay').classList.add('open');
+}
+function closeConfirmModal(e){if(e.target===document.getElementById('confirmOverlay'))closeConfirmModalDirect();}
+function closeConfirmModalDirect(){document.getElementById('confirmOverlay').classList.remove('open');_delId=null;}
+function confirmDeleteAction(){
+  if(!_delId)return;
+  const cs=loadCustomers(); const i=cs.findIndex(c=>c.id===_delId);
+  if(i!==-1){cs.splice(i,1);saveCustomers(cs);}
+  closeConfirmModalDirect(); toast('🗑️ Customer deleted.'); renderAll();
+}
+
+// ─── ADD CUSTOMER ──────────────────────────────────────────────────────────
+async function addCustomer(){
+  const name=document.getElementById('fName').value.trim();
+  const user=document.getElementById('fUser').value.trim();
+  const productId=document.getElementById('fProduct').value;
+  const date=document.getElementById('fDate').value;
+  const priceIn=document.getElementById('fPrice').value;
+  const note=document.getElementById('fNote').value.trim();
+  if(!name||!date){toast('⚠️ Name and date required!');return;}
+  const p=loadProducts().find(x=>x.id===productId);
+  const price=priceIn?parseFloat(priceIn):(p?p.salePrice:0);
+  const newC={id:'c'+Date.now(),name,user,productId,productName:p?p.name:'',price,purchaseDate:date,note,msg1Sent:false,msg2Sent:false,msg3Sent:false,reviewDone:false};
+  const cs=loadCustomers();
+  cs.push(newC);
+  _customers=cs;
+  localStorage.setItem('esm_customers',JSON.stringify(cs));
+  await upsertCustomer(newC);
+  toast('✅ '+name+' added!');
+  document.getElementById('fName').value=''; document.getElementById('fUser').value=''; document.getElementById('fNote').value=''; document.getElementById('fPrice').value='';
+  document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
+  gotoTab('reminders'); renderAll();
+}
+function markReviewDone(id){
+  const cs=loadCustomers(),c=cs.find(x=>x.id===id);
+  if(c){c.reviewDone=true;saveCustomers(cs);toast('🎉 Review marked!');renderAll();}
+}
+function exportCSV(){
+  const cs=loadCustomers(),ps=loadProducts();
+  const rows=[['Name','Username','Product','Purchase Date','Price','Status','Note']];
+  cs.forEach(c=>{
+    const p=ps.find(x=>x.id===c.productId);
+    rows.push([c.name,c.user||'',p?p.name:(c.productName||''),c.purchaseDate,c.price,getStep(c),c.note||'']);
+  });
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='customers.csv'; a.click();
+}
+
+// ─── RENDER: SELECT ────────────────────────────────────────────────────────
+function populateProductSelect(){
+  const ps=loadProducts();
+  const sel=document.getElementById('fProduct');
+  sel.innerHTML=ps.map(p=>`<option value="${p.id}">${sn(p.name,55)} — ${fmt$(p.salePrice)}</option>`).join('');
+  if(ps.length) document.getElementById('fPrice').placeholder=fmt$(ps[0].salePrice);
+}
+
+// ─── RENDER: STATS ─────────────────────────────────────────────────────────
+function renderStats(id){
+  const cs=loadCustomers();
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth();
+  const tm=cs.filter(c=>{const d=new Date(c.purchaseDate);return d.getFullYear()===y&&d.getMonth()===m;});
+  const rev=tm.reduce((a,c)=>a+(c.price||0),0);
+  const rem=cs.filter(c=>['step1','step2','step3'].includes(getStep(c))).length;
+  const reviews=cs.filter(c=>c.reviewDone).length;
+  const el=document.getElementById(id); if(!el)return;
+  const stripes=['#6C63FF','#16A34A','#F5A623','#DC2626'];
+  el.innerHTML=[
+    {label:'This Month Revenue',val:fmt$(rev),sub:tm.length+' orders',color:stripes[0]},
+    {label:'Total Customers',val:cs.length,sub:'all time',color:stripes[1]},
+    {label:'Reviews Collected',val:reviews,sub:cs.length?Math.round(reviews/cs.length*100)+'% rate':'0%',color:stripes[2]},
+    {label:'Pending Reminders',val:rem,sub:'action needed',color:rem>0?stripes[3]:stripes[1]},
+  ].map(s=>`<div class="stat-card"><div class="stat-stripe" style="background:${s.color}"></div><div class="stat-label">${s.label}</div><div class="stat-val" style="color:${s.color}">${s.val}</div><div class="stat-sub">${s.sub}</div></div>`).join('');
+
+  // Update greeting badge
+  const gb=document.getElementById('greetingBadge');
+  if(gb) gb.textContent=rem>0?rem+' reminder'+(rem>1?'s':'')+' today':'All caught up ✓';
+}
+
+// ─── RENDER: REMINDERS ─────────────────────────────────────────────────────
+function renderReminderList(containerId,limit=null){
+  const cs=loadCustomers();
+  const reminders=cs.filter(c=>['step1','step2','step3'].includes(getStep(c)));
+  const shown=limit?reminders.slice(0,limit):reminders;
+  const el=document.getElementById(containerId); if(!el)return;
+  const badge=document.getElementById('reminderBadge');
+  if(badge){badge.textContent=reminders.length;badge.style.display=reminders.length>0?'inline':'none';}
+  const bnavBadge=document.getElementById('bnavBadge');
+  if(bnavBadge){bnavBadge.textContent=reminders.length;bnavBadge.style.display=reminders.length>0?'flex':'none';}
+  if(!shown.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">✅</div>No reminders today! All caught up.</div>`;return;}
+  const ps=loadProducts();
+  el.innerHTML=shown.map(c=>{
+    const step=getStep(c);
+    const p=ps.find(x=>x.id===c.productId);
+    const pname=sn(p?p.name:(c.productName||'Product'),45);
+    const icons={step1:'😊',step2:'⭐',step3:'🎁'};
+    const labels={step1:'Step 1: Puchna hai how is product?',step2:'Step 2: Review request karo',step3:'Step 3: Bonus do + Review lo'};
+    const lblCls={step1:'lbl-s1',step2:'lbl-s2',step3:'lbl-s3'};
+    return `<div class="remind-item">
+      <div class="remind-icon ${step}">${icons[step]}</div>
+      <div class="remind-body">
+        <div class="remind-name">${c.name}</div>
+        <div class="remind-product">${pname}</div>
+        <div class="remind-label ${lblCls[step]}">${labels[step]}</div>
+        <div class="remind-actions">
+          <button class="btn accent" style="font-size:12px" onclick="openMsgModal('${c.id}','${step}')">📋 Message</button>
+          <button class="btn success" style="font-size:12px" onclick="markReviewDone('${c.id}')">✅ Review Mili</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── RENDER: RECENT CUSTOMERS ──────────────────────────────────────────────
+function renderRecentCustomers(){
+  const cs=[...loadCustomers()].sort((a,b)=>new Date(b.purchaseDate)-new Date(a.purchaseDate)).slice(0,5);
+  const el=document.getElementById('dashRecent'); if(!el)return;
+  if(!cs.length){el.innerHTML=`<div class="empty-state">No customers yet.</div>`;return;}
+  const ps=loadProducts();
+  el.innerHTML=cs.map(c=>{
+    const [bg,tc]=avCol(c.name);
+    const d=daysSince(c.purchaseDate);
+    const p=ps.find(x=>x.id===c.productId);
+    const pname=sn(p?p.name:(c.productName||''),38);
+    return `<div class="cust-row">
+      <div class="avatar" style="background:${bg};color:${tc}">${initials(c.name)}</div>
+      <div class="cust-info"><div class="cust-name">${c.name}</div><div class="cust-product">${pname}</div></div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:13px;font-weight:700;color:var(--green)">${fmt$(c.price)}</div>
+        <div class="cust-meta">${d===0?'Today':d===1?'Yesterday':d+'d ago'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── RENDER: ALL CUSTOMERS ─────────────────────────────────────────────────
+let _filter='all';
+function setFilter(val,el){
+  _filter=val;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active'); renderCustomers();
+}
+function renderCustomers(){
+  const q=(document.getElementById('custSearch')?.value||'').toLowerCase();
+  let cs=[...loadCustomers()].sort((a,b)=>new Date(b.purchaseDate)-new Date(a.purchaseDate));
+  if(q) cs=cs.filter(c=>c.name.toLowerCase().includes(q)||(c.productName||'').toLowerCase().includes(q));
+  if(_filter==='new') cs=cs.filter(c=>getStep(c)==='new');
+  else if(_filter==='pending') cs=cs.filter(c=>['step1','step2','step3'].includes(getStep(c)));
+  else if(_filter==='done') cs=cs.filter(c=>getStep(c)==='done');
+  const cl=document.getElementById('custCountLabel'); if(cl) cl.textContent=cs.length+' customer'+(cs.length!==1?'s':'');
+  const el=document.getElementById('custList'); if(!el)return;
+  if(!cs.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">🔍</div>No customers found.</div>`;return;}
+  const ps=loadProducts();
+  const sm={done:['Review Received 🎉','pill-green'],new:['New ✨','pill-blue'],step1:['Feedback Pending','pill-amber'],step2:['Review Pending','pill-amber'],step3:['Bonus Pending','pill-red'],waiting:['Follow-up Sent','pill-gray']};
+  el.innerHTML=cs.map(c=>{
+    const [bg,tc]=avCol(c.name);
+    const d=daysSince(c.purchaseDate);
+    const p=ps.find(x=>x.id===c.productId);
+    const pname=sn(p?p.name:(c.productName||''),44);
+    const step=getStep(c);
+    const [sl,sc]=sm[step]||['—','pill-gray'];
+    return `<div class="cust-row">
+      <div class="avatar" style="background:${bg};color:${tc}">${initials(c.name)}</div>
+      <div class="cust-info">
+        <div class="cust-name">${c.name} <span style="color:var(--muted);font-weight:400;font-size:12px">${c.user||''}</span></div>
+        <div class="cust-product">${pname}</div>
+        <div class="cust-meta">${d===0?'Today':d===1?'Yesterday':d+' days ago'} &bull; ${fmt$(c.price)}${c.note?' &bull; '+sn(c.note,28):''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+        <span class="pill ${sc}">${sl}</span>
+        <div style="display:flex;gap:5px;align-items:center">
+          ${['step1','step2','step3'].includes(step)?`<button class="btn" style="font-size:11px;padding:5px 11px" onclick="openMsgModal('${c.id}','${step}')">Message</button>`:''}
+          ${step!=='done'?`<button class="btn success" style="font-size:11px;padding:5px 11px" onclick="markReviewDone('${c.id}')">✅ Done</button>`:''}
+          <button class="cust-delete-btn" onclick="confirmDeleteCustomer('${c.id}','${c.name.replace(/'/g,"&#39;")}')" title="Delete">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── RENDER: PRODUCTS ──────────────────────────────────────────────────────
+function renderProducts(){
+  const ps=loadProducts();
+  const el=document.getElementById('prodCount'); if(el) el.textContent=ps.length+' products in catalog';
+  const pg=document.getElementById('prodGrid'); if(!pg)return;
+  pg.innerHTML=ps.map(p=>{
+    const disc=p.origPrice&&p.origPrice!==p.salePrice?Math.round((1-p.salePrice/p.origPrice)*100):0;
+    return `<div class="prod-card">
+      ${disc>0?`<div class="prod-card-badge">-${disc}% off</div>`:''}
+      <div class="prod-card-name">${p.name}</div>
+      <div style="display:flex;align-items:baseline;gap:7px">
+        <div class="prod-card-price">${fmt$(p.salePrice)}</div>
+        ${p.origPrice&&p.origPrice!==p.salePrice?`<div class="prod-card-orig">${fmt$(p.origPrice)}</div>`:''}
+      </div>
+      <div class="prod-card-actions">
+        ${p.url?`<a href="${p.url}" target="_blank"><button class="btn-edit">Open Etsy ↗</button></a>`:''}
+        ${p.custom?`<button class="btn-edit" onclick="deleteProduct('${p.id}')" style="color:var(--red)">🗑️ Delete</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── RENDER: SALES ─────────────────────────────────────────────────────────
+function renderSales(){
+  const cs=loadCustomers(),ps=loadProducts();
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth();
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const allRev=cs.reduce((a,c)=>a+(c.price||0),0);
+  const tm=cs.filter(c=>{const d=new Date(c.purchaseDate);return d.getFullYear()===y&&d.getMonth()===m;});
+  const monthRev=tm.reduce((a,c)=>a+(c.price||0),0);
+  const avg=cs.length?allRev/cs.length:0;
+  const reviews=cs.filter(c=>c.reviewDone).length;
+  const ss=document.getElementById('salesStats');
+  if(ss) ss.innerHTML=[
+    {label:'Total Revenue',val:fmt$(allRev),sub:'all time',col:'#6C63FF'},
+    {label:'This Month',val:fmt$(monthRev),sub:tm.length+' orders',col:'#16A34A'},
+    {label:'Avg. Order',val:fmt$(avg),sub:'per customer',col:'#F5A623'},
+    {label:'Review Rate',val:cs.length?Math.round(reviews/cs.length*100)+'%':'0%',sub:reviews+'/'+cs.length+' collected',col:'#7C3AED'},
+  ].map(s=>`<div class="stat-card"><div class="stat-stripe" style="background:${s.col}"></div><div class="stat-label">${s.label}</div><div class="stat-val" style="color:${s.col}">${s.val}</div><div class="stat-sub">${s.sub}</div></div>`).join('');
+
+  const monthly=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(y,m-i,1);
+    const rev=cs.filter(c=>{const cd=new Date(c.purchaseDate);return cd.getFullYear()===d.getFullYear()&&cd.getMonth()===d.getMonth();}).reduce((a,c)=>a+(c.price||0),0);
+    monthly.push({label:months[d.getMonth()],rev});
+  }
+  const maxR=Math.max(...monthly.map(x=>x.rev),1);
+  const ce=document.getElementById('salesChart');
+  if(ce) ce.innerHTML=monthly.map(x=>`<div class="bar-wrap"><div class="bar-val">${x.rev>0?fmt$(Math.round(x.rev)):''}</div><div class="bar" style="height:${x.rev>0?Math.max(Math.round(x.rev/maxR*110),6):4}px"></div><div class="bar-label">${x.label}</div></div>`).join('');
+
+  const byP={};
+  cs.forEach(c=>{const p=ps.find(x=>x.id===c.productId);const n=p?p.name:(c.productName||'Other');if(!byP[n])byP[n]={count:0,rev:0};byP[n].count++;byP[n].rev+=c.price||0;});
+  const sorted=Object.entries(byP).sort((a,b)=>b[1].rev-a[1].rev);
+  const maxC=Math.max(...sorted.map(x=>x[1].count),1);
+  const se=document.getElementById('salesByProd');
+  if(se) se.innerHTML=sorted.length?sorted.map(([n,d])=>`<div class="prod-sale-row"><div style="flex:1;min-width:0"><div class="prod-sale-name">${sn(n,38)}</div><div class="prod-sale-count">${d.count} sale${d.count!==1?'s':''}</div><div class="prog"><div class="prog-fill" style="width:${Math.round(d.count/maxC*100)}%"></div></div></div><div class="prod-sale-rev">${fmt$(d.rev)}</div></div>`).join(''):`<div class="empty-state">No sales data yet.</div>`;
+}
+
+// ─── TAB SWITCHING ─────────────────────────────────────────────────────────
+function gotoTab(name){
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.bnav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+name)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el=>{if(el.getAttribute('onclick')?.includes("'"+name+"'"))el.classList.add('active');});
+  document.querySelectorAll('.bnav-item').forEach(el=>{if(el.dataset.tab===name)el.classList.add('active');});
+  window.scrollTo(0,0);
+  renderAll();
+}
+
+// ─── RENDER ALL ────────────────────────────────────────────────────────────
+function renderAll(){
+  populateProductSelect();
+  renderStats('dashStats');
+  renderStats('salesStats');
+  renderReminderList('dashReminders',3);
+  renderReminderList('remindersList');
+  renderRecentCustomers();
+  renderCustomers();
+  renderProducts();
+  renderSales();
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────
+document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
+initGreeting();
+renderAll();
+</script>
+</body>
+</html>
