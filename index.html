@@ -1118,7 +1118,7 @@ async function syncFromEtsy() {
     banner.innerHTML='<span>⚠️</span><span>Sync nahi hua (Etsy CORS block karta hai browser pe). Manually product add karo below.</span>';
   }
   renderAll();
-  setTimeout(()=>{ banner.style.display='none'; dot.className='sync-dot'; st.textContent='Data saved locally'; },6000);
+  setTimeout(()=>{ banner.style.display='none'; dot.className='sync-dot'; st.textContent=_dbReady?'Cloud synced ✓':'Data saved locally'; },6000);
 }
 
 function parseEtsyListings(html) {
@@ -1179,7 +1179,7 @@ function closeMsgModalDirect(){document.getElementById('msgOverlay').classList.r
 function copyMsgAndMark(){
   navigator.clipboard.writeText(document.getElementById('msgArea').value).then(()=>{
     const cs=loadCustomers(), c=cs.find(x=>x.id===_mCustId);
-    if(c){if(_mStep==='step1')c.msg1Sent=true;if(_mStep==='step2')c.msg2Sent=true;if(_mStep==='step3')c.msg3Sent=true;saveCustomers(cs);}
+    if(c){if(_mStep==='step1')c.msg1Sent=true;if(_mStep==='step2')c.msg2Sent=true;if(_mStep==='step3')c.msg3Sent=true;saveCustomers(cs);upsertCustomer(c);}
     toast('✅ Copied and marked as sent!'); closeMsgModalDirect(); renderAll();
   }).catch(()=>toast('Manual copy: Ctrl+A then Ctrl+C'));
 }
@@ -1217,7 +1217,7 @@ function closeConfirmModalDirect(){document.getElementById('confirmOverlay').cla
 function confirmDeleteAction(){
   if(!_delId)return;
   const cs=loadCustomers(); const i=cs.findIndex(c=>c.id===_delId);
-  if(i!==-1){cs.splice(i,1);saveCustomers(cs);}
+  if(i!==-1){cs.splice(i,1);saveCustomers(cs);deleteCustomerFromDB(_delId);}
   closeConfirmModalDirect(); toast('🗑️ Customer deleted.'); renderAll();
 }
 
@@ -1245,7 +1245,7 @@ async function addCustomer(){
 }
 function markReviewDone(id){
   const cs=loadCustomers(),c=cs.find(x=>x.id===id);
-  if(c){c.reviewDone=true;saveCustomers(cs);toast('🎉 Review marked!');renderAll();}
+  if(c){c.reviewDone=true;saveCustomers(cs);upsertCustomer(c);toast('🎉 Review marked!');renderAll();}
 }
 function exportCSV(){
   const cs=loadCustomers(),ps=loadProducts();
@@ -1477,7 +1477,8 @@ function renderAll(){
 // ─── INIT ──────────────────────────────────────────────────────────────────
 document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
 initGreeting();
-renderAll();
+renderAll(); // Turant local data dikhao
+initDB();    // Phir Supabase se sync karo
 </script>
 </body>
 </html>
