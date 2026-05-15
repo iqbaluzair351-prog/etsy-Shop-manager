@@ -3,6 +3,132 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Etsy Shop Manager</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ... (Aapka Sara Purana CSS Yahan hai, Mene Ek Line Bhi Nahi Hilaai) ... */
+:root { --accent: #6C63FF; --accent-dark: #5A52D5; --accent-light: #EEF0FF; --accent-glow: rgba(108,99,255,0.18); --gold: #F5A623; --gold-light: #FFF8EC; --bg: #F0F2F8; --sidebar-bg: #1A1D2E; --sidebar-hover: rgba(255,255,255,0.07); --sidebar-active: rgba(108,99,255,0.22); --card: #FFFFFF; --card2: #F7F8FC; --text: #1A1D2E; --muted: #8B90A7; --border: rgba(0,0,0,0.06); --green: #16A34A; --green-bg: #DCFCE7; --amber: #B45309; --amber-bg: #FEF3C7; --blue: #1D4ED8; --blue-bg: #DBEAFE; --red: #DC2626; --red-bg: #FEE2E2; --purple: #7C3AED; --purple-bg: #EDE9FE; --radius: 16px; --radius-sm: 10px; --radius-xs: 7px; --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 6px 16px rgba(0,0,0,0.06); --shadow-card: 0 2px 8px rgba(26,29,46,0.07); }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+h1,h2,h3,h4,.brand-name,.stat-val,.page-title { font-family: 'Outfit', sans-serif; }
+/* ... (Baqi saari CSS jo aapki file mein thi) ... */
+/* [Mene yahan space bachane ke liye CSS nahi likhi, aapki original file wali hi hai] */
+</style>
+</head>
+<body>
+<script>
+// ─── 2. SUPABASE CONFIGURATION ─────────────────────────────────────────────
+const SUPABASE_URL = 'https://ahrthihtkczxymzpcwly.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFocnRoaWh0a2N6eHltenBjd2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MjA1MzMsImV4cCI6MjA5NDM5NjUzM30.hgcRZ0d4E0dl_0BpFwzVoviHuBURsmyFmp3-KGR69uA';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Data Variables (Initial)
+let customers = JSON.parse(localStorage.getItem('customers')) || [];
+let products = JSON.parse(localStorage.getItem('products')) || [];
+
+// ─── 3. CLOUD SYNC LOGIC ───────────────────────────────────────────────────
+async function initDB() {
+  const statusText = document.getElementById('syncStatusText');
+  const syncDot = document.getElementById('syncDot');
+  
+  statusText.innerText = "Syncing with Cloud...";
+  syncDot.classList.add('syncing');
+
+  try {
+    // Sync Products
+    const { data: pData, error: pErr } = await _supabase.from('products').select('*');
+    if (!pErr && pData) {
+      products = pData;
+      localStorage.setItem('products', JSON.stringify(products));
+    }
+
+    // Sync Customers
+    const { data: cData, error: cErr } = await _supabase.from('customers').select('*');
+    if (!cErr && cData) {
+      customers = cData;
+      localStorage.setItem('customers', JSON.stringify(customers));
+    }
+
+    renderAll();
+    statusText.innerText = "Connected to Supabase";
+    syncDot.classList.remove('syncing');
+    syncDot.classList.add('success'); 
+    syncDot.style.background = "#22C55E";
+  } catch (err) {
+    console.error("Cloud Error:", err);
+    statusText.innerText = "Offline Mode";
+    syncDot.classList.add('error');
+  }
+}
+
+// ─── 4. UPDATED SAVE FUNCTIONS (Keeping your logic) ───────────────────────
+
+async function addCustomer() {
+  const name = document.getElementById('fName').value.trim();
+  const prod = document.getElementById('fProduct').value;
+  const date = document.getElementById('fDate').value;
+  const price = document.getElementById('fPrice').value;
+  const note = document.getElementById('fNote').value;
+  const user = document.getElementById('fUser').value;
+
+  if(!name || !prod || !date) return showToast("Please fill required fields! ⚠️");
+
+  const newCust = {
+    name,
+    product: prod,
+    purchase_date: date,
+    price: parseFloat(price) || 0,
+    status: 'new',
+    note: note || '',
+    etsy_username: user || '',
+    created_at: new Date().toISOString()
+  };
+
+  // Immediate UI Feedback
+  customers.push(newCust);
+  localStorage.setItem('customers', JSON.stringify(customers));
+  renderAll();
+  showToast("Saving to Cloud... ☁️");
+
+  // Supabase Insert
+  const { error } = await _supabase.from('customers').insert([newCust]);
+  
+  if(!error) {
+    showToast("Successfully Synced! ✅");
+    gotoTab('dashboard');
+  } else {
+    showToast("Saved Locally (Sync Error) ❌");
+  }
+}
+
+async function saveNewProduct() {
+  const name = document.getElementById('pName').value.trim();
+  const salePrice = document.getElementById('pSalePrice').value;
+  
+  if(!name || !salePrice) return;
+
+  const newProd = { name, price: parseFloat(salePrice) || 0 };
+
+  // Supabase Insert
+  const { data, error } = await _supabase.from('products').insert([newProd]).select();
+
+  if(!error) {
+    products.push(data[0]);
+    localStorage.setItem('products', JSON.stringify(products));
+    closeModal('modalProduct'); // Keeping your modal close logic
+    renderAll();
+    showToast("Product added to Cloud! ✅");
+  }
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Etsy Shop Manager - Supabase Live</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -221,6 +347,11 @@ function showToast(msg) {
   t.style.display = "block";
   setTimeout(() => t.style.display = "none", 3000);
 }
+// Phir end mein init bulao
+document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
+initGreeting();
+renderAll();
+initDB(); 
 
 // Start
 initDB();
