@@ -611,7 +611,7 @@ nav { padding: 1rem 0.8rem; flex: 1; overflow-y: auto; }
   <!-- ADD CUSTOMER -->
   <div class="tab-content" id="tab-add">
     <div class="page-hd">
-      <div><div class="page-title">Add Customer ➕</div><div class="page-sub">Track a new purchase and start follow-up flow</div></div>
+      <div><div class="page-title">Add Customer ➕</div><div class="page-sub">Track a new purchase and start the follow-up flow</div></div>
     </div>
     <div class="card card-pad" style="max-width:620px;">
       <div class="form-grid" style="margin-bottom:14px;">
@@ -835,17 +835,17 @@ let _dbReady = false;
 // ─── DB INIT: create tables if not exist via RPC isn't available,
 //     so we do a test fetch and show setup instructions if needed
 async function initDB() {
-  setSyncStatus('connecting', 'Supabase se connect ho raha hai...');
+  setSyncStatus('connecting', 'Connecting to Supabase...');
   try {
     // Test customers table
     await sbFetch('customers?limit=1', { method: 'GET' });
     _dbReady = true;
-    setSyncStatus('ok', 'Cloud se connected ✓');
+    setSyncStatus('ok', 'Cloud connected ✓');
     await loadAllFromCloud();
   } catch(e) {
     // Tables don't exist yet — show SQL setup banner
     _dbReady = false;
-    setSyncStatus('error', 'Tables setup karo');
+    setSyncStatus('error', 'Setup tables first');
     showSetupBanner();
     // Fall back to localStorage
     _customers = JSON.parse(localStorage.getItem('esm_customers')||'[]');
@@ -855,7 +855,7 @@ async function initDB() {
 }
 
 function showSetupBanner() {
-  const sql = `-- Supabase SQL Editor mein ye paste karo:
+  const sql = `-- Paste this in Supabase SQL Editor:
 CREATE TABLE customers (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -881,7 +881,7 @@ CREATE TABLE custom_products (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Row Level Security disable karo (apna private tool hai)
+-- Disable Row Level Security (this is a private tool)
 ALTER TABLE customers DISABLE ROW LEVEL SECURITY;
 ALTER TABLE custom_products DISABLE ROW LEVEL SECURITY;`;
 
@@ -893,7 +893,7 @@ ALTER TABLE custom_products DISABLE ROW LEVEL SECURITY;`;
   div.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,30,0.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)';
   div.innerHTML = `<div style="background:#fff;border-radius:20px;padding:1.5rem;max-width:520px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,0.3)">
     <div style="font-family:Outfit,sans-serif;font-size:17px;font-weight:700;margin-bottom:6px">⚙️ Ek baar setup karo</div>
-    <div style="font-size:13px;color:#8B90A7;margin-bottom:14px;line-height:1.6">Supabase mein ye SQL run karo — sirf ek baar karna hai. Phir sab devices pe data sync hoga!</div>
+    <div style="font-size:13px;color:#8B90A7;margin-bottom:14px;line-height:1.6">Run this SQL in your Supabase SQL Editor — only once. After this, data will sync across all your devices!</div>
     <div style="font-size:12px;color:#6B7280;margin-bottom:8px;font-weight:600">1. supabase.com → apna project → SQL Editor → New Query</div>
     <textarea readonly style="width:100%;height:220px;font-size:11px;font-family:monospace;padding:10px;border:1.5px solid #E2E4EF;border-radius:8px;background:#F7F8FC;resize:none;line-height:1.5">${sql}</textarea>
     <div style="font-size:12px;color:#6B7280;margin:10px 0 4px;font-weight:600">2. "Run" button dabao → phir ye button dabao:</div>
@@ -903,7 +903,7 @@ ALTER TABLE custom_products DISABLE ROW LEVEL SECURITY;`;
   document.body.appendChild(div);
 
   window.copySQL = () => {
-    navigator.clipboard.writeText(sql).then(()=>toast('✅ SQL copied!')).catch(()=>toast('Manual copy karo'));
+    navigator.clipboard.writeText(sql).then(()=>toast('✅ SQL copied!')).catch(()=>toast('Please copy manually'));
   };
 }
 
@@ -916,7 +916,7 @@ async function retryDB() {
 // ─── CLOUD LOAD/SAVE ───────────────────────────────────────────────────────
 async function loadAllFromCloud() {
   try {
-    setSyncStatus('syncing', 'Data load ho raha hai...');
+    setSyncStatus('syncing', 'Loading data...');
     const [custs, prods] = await Promise.all([
       sbFetch('customers?order=created_at.desc', { method:'GET' }),
       sbFetch('custom_products?order=created_at.desc', { method:'GET' })
@@ -942,7 +942,7 @@ async function loadAllFromCloud() {
     renderAll();
   } catch(e) {
     console.error('Load error:', e);
-    setSyncStatus('error', 'Load failed — local data use ho rahi hai');
+    setSyncStatus('error', 'Load failed — using local data');
     _customers = JSON.parse(localStorage.getItem('esm_customers')||'[]');
     _customProducts = JSON.parse(localStorage.getItem('esm_products')||'[]');
     renderAll();
@@ -1068,7 +1068,7 @@ async function syncFromEtsy() {
   st.textContent='Syncing from Etsy...';
   banner.style.display='flex';
   banner.className='sync-banner';
-  banner.innerHTML='<span>🔄</span><span>Etsy shop se products sync ho rahe hain...</span>';
+  banner.innerHTML='<span>🔄</span><span>Syncing products from your Etsy shop...</span>';
 
   // Etsy public listings scrape via allorigins proxy (CORS bypass, public data only)
   const shopName='brightdigilab';
@@ -1107,13 +1107,13 @@ async function syncFromEtsy() {
         dot.className='sync-dot';
         st.textContent='Synced from Etsy';
         banner.className='sync-banner success';
-        banner.innerHTML=`<span>✅</span><span>${newCount} naya product add ho gaya Etsy shop se!</span>`;
+        banner.innerHTML=`<span>✅</span><span>${newCount} new product(s) synced from your Etsy shop!</span>`;
         toast(`✅ ${newCount} new product(s) synced!`);
       } else {
         dot.className='sync-dot';
         st.textContent='Already up to date';
         banner.className='sync-banner success';
-        banner.innerHTML='<span>✅</span><span>Sab products already up to date hain!</span>';
+        banner.innerHTML='<span>✅</span><span>All products are already up to date!</span>';
         toast('✅ Products already up to date!');
       }
     } else {
@@ -1121,13 +1121,13 @@ async function syncFromEtsy() {
       dot.className='sync-dot';
       st.textContent='Sync attempted';
       banner.className='sync-banner';
-      banner.innerHTML='<span>ℹ️</span><span>Etsy ne abhi data nahi diya. Manually product add karo ya thodi der baad retry karo.</span>';
+      banner.innerHTML='<span>ℹ️</span><span>Etsy did not return data. Add products manually or retry later.</span>';
     }
   } catch(err) {
     dot.className='sync-dot error';
     st.textContent='Sync failed';
     banner.className='sync-banner error';
-    banner.innerHTML='<span>⚠️</span><span>Sync nahi hua (Etsy CORS block karta hai browser pe). Manually product add karo below.</span>';
+    banner.innerHTML='<span>⚠️</span><span>Sync failed (Etsy blocks browser requests). Please add products manually below.</span>';
   }
   renderAll();
   setTimeout(()=>{ banner.style.display='none'; dot.className='sync-dot'; st.textContent='Data saved locally'; },6000);
@@ -1192,8 +1192,8 @@ function copyMsgAndMark(){
   navigator.clipboard.writeText(document.getElementById('msgArea').value).then(()=>{
     const cs=loadCustomers(), c=cs.find(x=>x.id===_mCustId);
     if(c){if(_mStep==='step1')c.msg1Sent=true;if(_mStep==='step2')c.msg2Sent=true;if(_mStep==='step3')c.msg3Sent=true;_customers=cs;localStorage.setItem('esm_customers',JSON.stringify(cs));upsertCustomer(c);}
-    toast('✅ Copied and marked as sent!'); closeMsgModalDirect(); renderAll();
-  }).catch(()=>toast('Manual copy: Ctrl+A then Ctrl+C'));
+    toast('✅ Copied! Message marked as sent.'); closeMsgModalDirect(); renderAll();
+  }).catch(()=>toast('Please select all text and copy manually.'));
 }
 
 // ─── MODAL: PRODUCT ────────────────────────────────────────────────────────
@@ -1205,12 +1205,12 @@ function saveNewProduct(){
   const sp=parseFloat(document.getElementById('pSalePrice').value);
   const op=parseFloat(document.getElementById('pOrigPrice').value)||sp;
   const url=document.getElementById('pUrl').value.trim();
-  if(!name||isNaN(sp)){toast('⚠️ Name and price required!');return;}
+  if(!name||isNaN(sp)){toast('⚠️ Product name and price are required!');return;}
   const prods=loadProducts();
   prods.push({id:'cp'+Date.now(),name,salePrice:sp,origPrice:op,url,custom:true});
   saveProducts(prods);
   ['pName','pSalePrice','pOrigPrice','pUrl'].forEach(id=>document.getElementById(id).value='');
-  closeProdModalDirect(); toast('✅ Product added!'); renderAll();
+  closeProdModalDirect(); toast('✅ Product added successfully!'); renderAll();
 }
 function deleteProduct(id){
   const p=loadProducts(); const i=p.findIndex(x=>x.id===id); if(i===-1)return;
@@ -1241,7 +1241,7 @@ async function addCustomer(){
   const date=document.getElementById('fDate').value;
   const priceIn=document.getElementById('fPrice').value;
   const note=document.getElementById('fNote').value.trim();
-  if(!name||!date){toast('⚠️ Name and date required!');return;}
+  if(!name||!date){toast('⚠️ Name and date are required!');return;}
   const p=loadProducts().find(x=>x.id===productId);
   const price=priceIn?parseFloat(priceIn):(p?p.salePrice:0);
   const newC={id:'c'+Date.now(),name,user,productId,productName:p?p.name:'',price,purchaseDate:date,note,msg1Sent:false,msg2Sent:false,msg3Sent:false,reviewDone:false};
@@ -1257,7 +1257,7 @@ async function addCustomer(){
 }
 async function markReviewDone(id){
   const cs=loadCustomers(),c=cs.find(x=>x.id===id);
-  if(c){c.reviewDone=true;_customers=cs;localStorage.setItem('esm_customers',JSON.stringify(cs));await upsertCustomer(c);toast('🎉 Review marked!');renderAll();}
+  if(c){c.reviewDone=true;_customers=cs;localStorage.setItem('esm_customers',JSON.stringify(cs));await upsertCustomer(c);toast('🎉 Review marked as done!');renderAll();}
 }
 function exportCSV(){
   const cs=loadCustomers(),ps=loadProducts();
@@ -1319,7 +1319,7 @@ function renderReminderList(containerId,limit=null){
     const p=ps.find(x=>x.id===c.productId);
     const pname=sn(p?p.name:(c.productName||'Product'),45);
     const icons={step1:'😊',step2:'⭐',step3:'🎁'};
-    const labels={step1:'Step 1: Puchna hai how is product?',step2:'Step 2: Review request karo',step3:'Step 3: Bonus do + Review lo'};
+    const labels={step1:'Step 1: Check how the product is going',step2:'Step 2: Request a review',step3:'Step 3: Send bonus + get review'};
     const lblCls={step1:'lbl-s1',step2:'lbl-s2',step3:'lbl-s3'};
     return `<div class="remind-item">
       <div class="remind-icon ${step}">${icons[step]}</div>
