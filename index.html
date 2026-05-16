@@ -482,8 +482,90 @@ nav { padding: 1rem 0.8rem; flex: 1; overflow-y: auto; }
   display: flex; align-items: center; justify-content: center;
 }
 
+
+/* ── STEP FORM ── */
+.add-steps {
+  display: flex; align-items: center; gap: 0;
+  margin-bottom: 1.5rem; max-width: 480px;
+}
+.add-step { display: flex; align-items: center; gap: 8px; flex: 1; }
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #E2E4EF; color: #8B90A7;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+  font-family: 'Outfit', sans-serif; transition: all 0.2s;
+}
+.add-step.active .step-num { background: #6C63FF; color: #fff; }
+.add-step.done .step-num { background: #16A34A; color: #fff; }
+.step-lbl { font-size: 12px; color: #8B90A7; font-weight: 500; white-space: nowrap; }
+.add-step.active .step-lbl { color: #6C63FF; font-weight: 600; }
+.add-step.done .step-lbl { color: #16A34A; }
+.step-line { flex: 1; height: 2px; background: #E2E4EF; margin: 0 6px; max-width: 40px; }
+.add-step-card {
+  display: none; background: #fff;
+  border-radius: 16px; border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(26,29,46,0.07); padding: 1.5rem;
+  max-width: 480px; animation: slideIn 0.2s ease;
+}
+.add-step-card.active { display: block; }
+.step-card-title { font-size: 15px; font-weight: 700; margin-bottom: 1.2rem; font-family: 'Outfit', sans-serif; }
+.mb14 { margin-bottom: 14px; }
+.confirm-preview { background: #F0F2F8; border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 14px; }
+.cp-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.cp-row:last-child { border-bottom: none; }
+.cp-label { font-size: 12px; color: #8B90A7; }
+.cp-val { font-size: 13px; font-weight: 600; color: #1A1D2E; }
+.followup-plan { background: #EEF0FF; border-radius: 10px; padding: 1rem 1.2rem; border: 1px solid rgba(108,99,255,0.15); }
+.followup-title { font-size: 12px; font-weight: 700; color: #6C63FF; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.followup-row { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+.fp-day { font-size: 11px; font-weight: 700; color: #6C63FF; min-width: 42px; }
+.fp-action { font-size: 12px; color: #1A1D2E; }
+
+/* ── SHOP SETTINGS CARD ── */
+.shop-settings-card {
+  background: linear-gradient(135deg, #1A1D2E 0%, #2D2F5E 100%);
+  border-radius: 16px; padding: 1.4rem 1.6rem;
+  margin-bottom: 1.2rem; display: flex; align-items: center; gap: 16px;
+  box-shadow: 0 8px 24px rgba(26,29,46,0.18);
+}
+.etsy-logo-badge {
+  width: 52px; height: 52px; border-radius: 12px;
+  background: #F96854; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 24px; font-weight: 900;
+  color: #fff; font-family: 'Outfit', sans-serif;
+}
+.shop-settings-info { flex: 1; min-width: 0; }
+.shop-settings-name { font-size: 15px; font-weight: 700; color: #fff; }
+.shop-settings-url { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 3px; word-break: break-all; }
+.shop-settings-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+.btn-shop-edit {
+  font-size: 12px; padding: 7px 14px; border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.2); background: transparent;
+  color: rgba(255,255,255,0.7); cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s;
+}
+.btn-shop-edit:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.btn-shop-open {
+  font-size: 12px; padding: 7px 14px; border-radius: 7px;
+  border: none; background: #F96854; color: #fff; cursor: pointer;
+  font-family: 'Inter', sans-serif; font-weight: 600; transition: all 0.15s;
+}
+.btn-shop-open:hover { background: #e05a47; }
+
+/* ── REMINDER CATEGORIES ── */
+.reminder-cat-hd {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 1.25rem; background: #F0F2F8;
+  border-bottom: 1px solid rgba(0,0,0,0.06); border-top: 1px solid rgba(0,0,0,0.06);
+  margin-top: 4px;
+}
+.reminder-cat-icon { font-size: 15px; }
+.reminder-cat-label { font-size: 11px; font-weight: 700; color: #8B90A7; text-transform: uppercase; letter-spacing: 0.5px; }
+.reminder-cat-count { margin-left: auto; font-size: 11px; font-weight: 700; color: #6C63FF; background: #EEF0FF; padding: 2px 8px; border-radius: 99px; }
+
 /* ── RESPONSIVE ── */
 @media(max-width:900px){ .prod-grid { grid-template-columns: 1fr; } }
+
 @media(max-width:768px){
   .sidebar { display: none; }
   .bottom-nav { display: block; }
@@ -526,10 +608,10 @@ nav { padding: 1rem 0.8rem; flex: 1; overflow-y: auto; }
 <!-- ═══ SIDEBAR ═══ -->
 <aside class="sidebar">
   <div class="brand">
-    <div class="brand-logo">🛍️</div>
+    <div class="brand-logo" style="background:#F96854;font-size:16px;font-weight:900;font-family:Outfit,sans-serif;letter-spacing:-1px">e</div>
     <div>
       <div class="brand-name">Etsy Shop Manager</div>
-      <div class="brand-sub">Follow-up & Analytics</div>
+      <div class="brand-sub" id="sidebarShopName">Follow-up & Analytics</div>
     </div>
   </div>
   <nav>
@@ -568,7 +650,7 @@ nav { padding: 1rem 0.8rem; flex: 1; overflow-y: auto; }
       <div class="sync-dot" id="syncDot"></div>
       <span id="syncStatusText">Data saved locally</span>
     </div>
-    <a href="https://www.etsy.com/shop/brightdigilab" target="_blank">↗ Open Etsy Shop</a>
+    <a href="#" id="sidebarShopLink" target="_blank" onclick="openShopLink(event)">↗ Open Etsy Shop</a>
   </div>
 </aside>
 
@@ -611,38 +693,63 @@ nav { padding: 1rem 0.8rem; flex: 1; overflow-y: auto; }
   <!-- ADD CUSTOMER -->
   <div class="tab-content" id="tab-add">
     <div class="page-hd">
-      <div><div class="page-title">Add Customer ➕</div><div class="page-sub">Track a new purchase and start follow-up flow</div></div>
+      <div><div class="page-title">Add Customer ➕</div><div class="page-sub">Track a new purchase and start follow-up</div></div>
     </div>
-    <div class="card card-pad" style="max-width:620px;">
-      <div class="form-grid" style="margin-bottom:14px;">
-        <div class="form-group">
-          <label>Customer Name *</label>
-          <input type="text" id="fName" placeholder="e.g. Ahmad Khan">
-        </div>
-        <div class="form-group">
-          <label>Etsy Username (optional)</label>
-          <input type="text" id="fUser" placeholder="@username">
-        </div>
+    <div class="add-steps">
+      <div class="add-step active" id="step-ind-1"><div class="step-num">1</div><div class="step-lbl">Info</div></div>
+      <div class="step-line"></div>
+      <div class="add-step" id="step-ind-2"><div class="step-num">2</div><div class="step-lbl">Product</div></div>
+      <div class="step-line"></div>
+      <div class="add-step" id="step-ind-3"><div class="step-num">3</div><div class="step-lbl">Confirm</div></div>
+    </div>
+    <div class="add-step-card active" id="add-step-1">
+      <div class="step-card-title">👤 Customer Information</div>
+      <div class="form-group mb14">
+        <label>Customer Name *</label>
+        <input type="text" id="fName" placeholder="e.g. Ahmad Khan" oninput="updatePreview()">
       </div>
-      <div class="form-group" style="margin-bottom:14px;">
-        <label>Select Product *</label>
-        <select id="fProduct"></select>
-      </div>
-      <div class="form-grid" style="margin-bottom:14px;">
-        <div class="form-group">
-          <label>Purchase Date *</label>
-          <input type="date" id="fDate">
-        </div>
-        <div class="form-group">
-          <label>Sale Price ($)</label>
-          <input type="number" id="fPrice" placeholder="Auto-filled" step="0.01">
-        </div>
+      <div class="form-group mb14">
+        <label>Etsy Username <span style="color:#8B90A7;font-weight:400">(optional)</span></label>
+        <input type="text" id="fUser" placeholder="@username">
       </div>
       <div class="form-group">
-        <label>Note (optional)</label>
+        <label>Purchase Date *</label>
+        <input type="date" id="fDate">
+      </div>
+      <button class="btn-main" onclick="goStep(2)" style="margin-top:20px">Next → Product</button>
+    </div>
+    <div class="add-step-card" id="add-step-2">
+      <div class="step-card-title">🛒 Select Product</div>
+      <div class="form-group mb14">
+        <label>Product *</label>
+        <select id="fProduct" onchange="onProductChange()"></select>
+      </div>
+      <div class="form-group mb14">
+        <label>Sale Price ($)</label>
+        <input type="number" id="fPrice" placeholder="Auto-filled" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Note <span style="color:#8B90A7;font-weight:400">(optional)</span></label>
         <input type="text" id="fNote" placeholder="Any special notes...">
       </div>
-      <button class="btn-main" onclick="addCustomer()">✅ Add Customer</button>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn" onclick="goStep(1)" style="flex:0 0 auto;padding:10px 16px">← Back</button>
+        <button class="btn-main" onclick="goStep(3)" style="flex:1;margin-top:0">Next → Confirm</button>
+      </div>
+    </div>
+    <div class="add-step-card" id="add-step-3">
+      <div class="step-card-title">✅ Confirm & Save</div>
+      <div class="confirm-preview" id="confirmPreview"></div>
+      <div class="followup-plan">
+        <div class="followup-title">📅 Auto Follow-up Plan</div>
+        <div class="followup-row"><span class="fp-day">Day 1</span><span class="fp-action">😊 Feedback check message</span></div>
+        <div class="followup-row"><span class="fp-day">Day 2</span><span class="fp-action">⭐ Review request message</span></div>
+        <div class="followup-row"><span class="fp-day">Day 4</span><span class="fp-action">🎁 Bonus indicator + review</span></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn" onclick="goStep(2)" style="flex:0 0 auto;padding:10px 16px">← Back</button>
+        <button class="btn-main" onclick="addCustomer()" style="flex:1;margin-top:0;background:#16A34A">✅ Add Customer</button>
+      </div>
     </div>
   </div>
 
@@ -674,12 +781,24 @@ nav { padding: 1rem 0.8rem; flex: 1; overflow-y: auto; }
   <div class="tab-content" id="tab-products">
     <div class="page-hd">
       <div><div class="page-title">My Products 🛒</div><div class="page-sub" id="prodCount">Loading...</div></div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn-export" onclick="syncFromEtsy()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
           Sync from Etsy
         </button>
         <button class="btn accent" onclick="openAddProduct()">+ Add Product</button>
+      </div>
+    </div>
+    <!-- SHOP LINK CARD -->
+    <div class="shop-settings-card">
+      <div class="etsy-logo-badge">e</div>
+      <div class="shop-settings-info">
+        <div class="shop-settings-name" id="shopDisplayName">Your Etsy Shop</div>
+        <div class="shop-settings-url" id="shopDisplayUrl">Set your shop link below to enable sync</div>
+      </div>
+      <div class="shop-settings-actions">
+        <button class="btn-shop-edit" onclick="openShopSettings()">✏️ Edit Link</button>
+        <button class="btn-shop-open" onclick="openShopLink(null)">↗ Open Shop</button>
       </div>
     </div>
     <div id="syncBanner" style="display:none"></div>
@@ -751,6 +870,28 @@ nav { padding: 1rem 0.8rem; flex: 1; overflow-y: auto; }
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- SHOP SETTINGS MODAL -->
+<div class="overlay" id="shopSettingsOverlay" onclick="closeShopSettings(event)">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-hd">
+      <h3>🏪 Shop Settings</h3>
+      <button class="btn-close" onclick="closeShopSettingsDirect()">✕</button>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;color:#8B90A7;margin-bottom:10px;line-height:1.6">Apna Etsy shop link enter karo. Ye save ho jayega aur sab features is shop ke saath kaam karenge.</div>
+      <div class="form-group mb14">
+        <label>Shop Name *</label>
+        <input type="text" id="shopNameInput" placeholder="e.g. brightdigilab">
+      </div>
+      <div class="form-group">
+        <label>Full Shop URL</label>
+        <input type="text" id="shopUrlInput" placeholder="https://www.etsy.com/shop/yourshop" readonly style="background:#F7F8FC;color:#8B90A7">
+      </div>
+    </div>
+    <button class="btn-main" onclick="saveShopSettings()">✅ Save Shop Settings</button>
+  </div>
+</div>
 
 <!-- BOTTOM NAV mobile -->
 <nav class="bottom-nav">
@@ -1314,26 +1455,49 @@ function renderReminderList(containerId,limit=null){
   if(bnavBadge){bnavBadge.textContent=reminders.length;bnavBadge.style.display=reminders.length>0?'flex':'none';}
   if(!shown.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">✅</div>No reminders today! All caught up.</div>`;return;}
   const ps=loadProducts();
-  el.innerHTML=shown.map(c=>{
-    const step=getStep(c);
-    const p=ps.find(x=>x.id===c.productId);
-    const pname=sn(p?p.name:(c.productName||'Product'),45);
-    const icons={step1:'😊',step2:'⭐',step3:'🎁'};
-    const labels={step1:'Step 1: Puchna hai how is product?',step2:'Step 2: Review request karo',step3:'Step 3: Bonus do + Review lo'};
-    const lblCls={step1:'lbl-s1',step2:'lbl-s2',step3:'lbl-s3'};
-    return `<div class="remind-item">
-      <div class="remind-icon ${step}">${icons[step]}</div>
-      <div class="remind-body">
-        <div class="remind-name">${c.name}</div>
-        <div class="remind-product">${pname}</div>
-        <div class="remind-label ${lblCls[step]}">${labels[step]}</div>
-        <div class="remind-actions">
-          <button class="btn accent" style="font-size:12px" onclick="openMsgModal('${c.id}','${step}')">📋 Message</button>
-          <button class="btn success" style="font-size:12px" onclick="markReviewDone('${c.id}')">✅ Review Mili</button>
-        </div>
+
+  // Group by step for full list; flat for dashboard
+  if(limit) {
+    el.innerHTML=shown.map(c=>reminderItemHTML(c,ps)).join('');
+  } else {
+    const groups={step1:[],step2:[],step3:[]};
+    reminders.forEach(c=>groups[getStep(c)]?.push(c));
+    const catMeta={
+      step1:{icon:'😊',label:'Day 1 — Feedback Check',color:'#1D4ED8'},
+      step2:{icon:'⭐',label:'Day 2 — Review Request',color:'#B45309'},
+      step3:{icon:'🎁',label:'Day 4 — Bonus + Review',color:'#7C3AED'},
+    };
+    let html='';
+    ['step1','step2','step3'].forEach(step=>{
+      if(!groups[step].length) return;
+      const m=catMeta[step];
+      html+=`<div class="reminder-cat-hd"><span class="reminder-cat-icon">${m.icon}</span><span class="reminder-cat-label" style="color:${m.color}">${m.label}</span><span class="reminder-cat-count">${groups[step].length}</span></div>`;
+      html+=groups[step].map(c=>reminderItemHTML(c,ps)).join('');
+    });
+    el.innerHTML=html;
+  }
+}
+
+function reminderItemHTML(c,ps){
+  const step=getStep(c);
+  const p=ps.find(x=>x.id===c.productId);
+  const pname=sn(p?p.name:(c.productName||'Product'),45);
+  const d=daysSince(c.purchaseDate);
+  const icons={step1:'😊',step2:'⭐',step3:'🎁'};
+  const labels={step1:'Feedback puchna hai',step2:'Review request karo',step3:'Bonus de do + Review lo'};
+  const lblCls={step1:'lbl-s1',step2:'lbl-s2',step3:'lbl-s3'};
+  return `<div class="remind-item">
+    <div class="remind-icon ${step}">${icons[step]}</div>
+    <div class="remind-body">
+      <div class="remind-name">${c.name} <span style="font-size:11px;color:#8B90A7;font-weight:400">${d===0?'(today)':d===1?'(yesterday)':'('+d+' days ago)'}</span></div>
+      <div class="remind-product">${pname}</div>
+      <div class="remind-label ${lblCls[step]}">${labels[step]}</div>
+      <div class="remind-actions">
+        <button class="btn accent" style="font-size:12px" onclick="openMsgModal('${c.id}','${step}')">📋 Message</button>
+        <button class="btn success" style="font-size:12px" onclick="markReviewDone('${c.id}')">✅ Review Mili</button>
       </div>
-    </div>`;
-  }).join('');
+    </div>
+  </div>`;
 }
 
 // ─── RENDER: RECENT CUSTOMERS ──────────────────────────────────────────────
@@ -1489,6 +1653,7 @@ function renderAll(){
 // ─── INIT ──────────────────────────────────────────────────────────────────
 document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
 initGreeting();
+updateShopUI();
 renderAll(); // show UI immediately with local data
 initDB();   // then connect to Supabase in background
 </script>
