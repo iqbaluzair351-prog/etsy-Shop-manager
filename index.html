@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Etsy Shop Manager</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -39,14 +42,13 @@
   --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 6px 16px rgba(0,0,0,0.06);
   --shadow-card: 0 2px 8px rgba(26,29,46,0.07);
 }
-* { box-sizing: border-box; margin: 0; padding: 0; touch-action: pan-x pan-y; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: 'Inter', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  touch-action: pan-x pan-y;
 }
 h1,h2,h3,h4,.brand-name,.stat-val,.page-title { font-family: 'Outfit', sans-serif; }
 
@@ -824,48 +826,26 @@ async function sbFetch(path, opts={}) {
 let _customers = null;
 let _customProducts = null;
 let _dbReady = false;
-let _retryTimer = null;
 
-// ─── DB INIT: connect to Supabase with auto-retry ──────────────────────────
+// ─── DB INIT: create tables if not exist via RPC isn't available,
+//     so we do a test fetch and show setup instructions if needed
 async function initDB() {
-  setSyncStatus('syncing', 'Supabase se connect ho raha hai...');
-  // Show local data immediately while connecting
-  if (_customers === null) {
+  setSyncStatus('connecting', 'Supabase se connect ho raha hai...');
+  try {
+    // Test customers table
+    await sbFetch('customers?limit=1', { method: 'GET', prefer: '' });
+    _dbReady = true;
+    setSyncStatus('ok', 'Cloud se connected ✓');
+    await loadAllFromCloud();
+  } catch(e) {
+    // Tables don't exist yet — show SQL setup banner
+    _dbReady = false;
+    setSyncStatus('error', 'Tables setup karo');
+    showSetupBanner();
+    // Fall back to localStorage
     _customers = JSON.parse(localStorage.getItem('esm_customers')||'[]');
     _customProducts = JSON.parse(localStorage.getItem('esm_products')||'[]');
     renderAll();
-  }
-  try {
-    const res = await fetch(SB_URL + '/rest/v1/customers?limit=1', {
-      method: 'GET',
-      headers: {
-        'apikey': SB_KEY,
-        'Authorization': 'Bearer ' + SB_KEY,
-        'Content-Type': 'application/json'
-      },
-      signal: AbortSignal.timeout(10000)
-    });
-    if (res.status === 200 || res.status === 206) {
-      _dbReady = true;
-      setSyncStatus('ok', 'Cloud connected \u2713');
-      await loadAllFromCloud();
-      return;
-    }
-    if (res.status === 404 || res.status === 400) {
-      _dbReady = false;
-      setSyncStatus('error', 'Tables setup karo');
-      showSetupBanner();
-      return;
-    }
-    throw new Error('HTTP ' + res.status);
-  } catch(e) {
-    _dbReady = false;
-    const isTimeout = e.name === 'TimeoutError' || e.name === 'AbortError';
-    const msg = isTimeout ? 'Connection timeout \u2014 retry ho raha hai...' : 'Offline \u2014 local data use ho rahi hai';
-    setSyncStatus('error', msg);
-    // Auto retry after 8 seconds
-    if (_retryTimer) clearTimeout(_retryTimer);
-    _retryTimer = setTimeout(() => initDB(), 8000);
   }
 }
 
@@ -936,8 +916,7 @@ async function loadAllFromCloud() {
       sbFetch('customers?order=created_at.desc', { method:'GET', prefer:'' }),
       sbFetch('custom_products?order=created_at.desc', { method:'GET', prefer:'' })
     ]);
-
-    const cloudCustomers = custs.map(r=>({
+    _customers = custs.map(r=>({
       id: r.id, name: r.name, user: r.username||'',
       productId: r.product_id||'', productName: r.product_name||'',
       price: parseFloat(r.price)||0, purchaseDate: r.purchase_date||'',
@@ -945,49 +924,22 @@ async function loadAllFromCloud() {
       msg1Sent: r.msg1_sent, msg2Sent: r.msg2_sent, msg3Sent: r.msg3_sent,
       reviewDone: r.review_done
     }));
-    const cloudProducts = prods.map(r=>({
+    _customProducts = prods.map(r=>({
       id: r.id, name: r.name,
       salePrice: parseFloat(r.sale_price)||0,
       origPrice: parseFloat(r.orig_price)||0,
       url: r.url||'', custom: true
     }));
-
-    // Push any local-only data to cloud (first time migration)
-    const localCusts = JSON.parse(localStorage.getItem('esm_customers')||'[]');
-    const localProds = JSON.parse(localStorage.getItem('esm_products')||'[]');
-    const cloudIds = new Set(cloudCustomers.map(c=>c.id));
-    const localOnlyCusts = localCusts.filter(c=>!cloudIds.has(c.id));
-    if (localOnlyCusts.length > 0) {
-      await Promise.all(localOnlyCusts.map(c => upsertCustomer(c)));
-      cloudCustomers.push(...localOnlyCusts);
-    }
-    const cloudProdIds = new Set(cloudProducts.map(p=>p.id));
-    const localOnlyProds = localProds.filter(p=>!cloudProdIds.has(p.id));
-    if (localOnlyProds.length > 0) {
-      const rows = localOnlyProds.map(p=>({
-        id:p.id, name:p.name, sale_price:p.salePrice, orig_price:p.origPrice, url:p.url||''
-      }));
-      await sbFetch('custom_products', { method:'POST', headers:{'Prefer':'resolution=merge-duplicates'}, body:JSON.stringify(rows) });
-      cloudProducts.push(...localOnlyProds);
-    }
-
-    _customers = cloudCustomers;
-    _customProducts = cloudProducts;
-
-    // Save to localStorage as offline cache
+    // Also save to localStorage as offline cache
     localStorage.setItem('esm_customers', JSON.stringify(_customers));
     localStorage.setItem('esm_products', JSON.stringify(_customProducts));
-    setSyncStatus('ok', 'Cloud synced \u2713 ' + new Date().toLocaleTimeString());
-    await flushQueue();
+    setSyncStatus('ok', 'Cloud synced ✓ ' + new Date().toLocaleTimeString());
     renderAll();
   } catch(e) {
     console.error('Load error:', e);
-    setSyncStatus('error', 'Load failed \u2014 local data use ho rahi hai');
+    setSyncStatus('error', 'Load failed — local data use ho rahi hai');
     _customers = JSON.parse(localStorage.getItem('esm_customers')||'[]');
     _customProducts = JSON.parse(localStorage.getItem('esm_products')||'[]');
-    // Retry after 10s
-    if (_retryTimer) clearTimeout(_retryTimer);
-    _retryTimer = setTimeout(() => initDB(), 10000);
     renderAll();
   }
 }
@@ -1038,58 +990,25 @@ async function saveCustomers(customers) {
 }
 
 async function upsertCustomer(c) {
-  const payload = {
-    id: c.id, name: c.name, username: c.user||'',
-    product_id: c.productId||'', product_name: c.productName||'',
-    price: c.price||0, purchase_date: c.purchaseDate||'',
-    note: c.note||'',
-    msg1_sent: c.msg1Sent||false, msg2_sent: c.msg2Sent||false,
-    msg3_sent: c.msg3Sent||false, review_done: c.reviewDone||false
-  };
-  if (!_dbReady) {
-    // Queue for when back online
-    const q = JSON.parse(localStorage.getItem('esm_queue')||'[]');
-    q.push({ type:'upsert', payload });
-    localStorage.setItem('esm_queue', JSON.stringify(q));
-    return;
-  }
+  if (!_dbReady) return;
   try {
     await sbFetch('customers', {
       method: 'POST',
       headers: { 'Prefer': 'resolution=merge-duplicates' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        id: c.id, name: c.name, username: c.user||'',
+        product_id: c.productId||'', product_name: c.productName||'',
+        price: c.price||0, purchase_date: c.purchaseDate||'',
+        note: c.note||'',
+        msg1_sent: c.msg1Sent||false, msg2_sent: c.msg2Sent||false,
+        msg3_sent: c.msg3Sent||false, review_done: c.reviewDone||false
+      })
     });
-    setSyncStatus('ok', 'Cloud synced \u2713');
-  } catch(e) {
-    console.error('Upsert customer error:', e);
-    setSyncStatus('error', 'Save failed \u2014 retry ho raha hai...');
-    if (_retryTimer) clearTimeout(_retryTimer);
-    _retryTimer = setTimeout(() => initDB(), 5000);
-  }
-}
-
-async function flushQueue() {
-  const q = JSON.parse(localStorage.getItem('esm_queue')||'[]');
-  if (!q.length || !_dbReady) return;
-  localStorage.setItem('esm_queue', '[]');
-  for (const item of q) {
-    try {
-      if (item.type === 'upsert') {
-        await sbFetch('customers', { method:'POST', headers:{'Prefer':'resolution=merge-duplicates'}, body:JSON.stringify(item.payload) });
-      } else if (item.type === 'delete') {
-        await sbFetch('customers?id=eq.'+item.id, { method:'DELETE', prefer:'' });
-      }
-    } catch(e) { console.error('Queue flush error:', e); }
-  }
+  } catch(e) { console.error('Upsert customer error:', e); }
 }
 
 async function deleteCustomerFromDB(id) {
-  if (!_dbReady) {
-    const q = JSON.parse(localStorage.getItem('esm_queue')||'[]');
-    q.push({ type:'delete', id });
-    localStorage.setItem('esm_queue', JSON.stringify(q));
-    return;
-  }
+  if (!_dbReady) return;
   try {
     await sbFetch('customers?id=eq.'+id, { method: 'DELETE', prefer: '' });
   } catch(e) { console.error('Delete error:', e); }
@@ -1202,7 +1121,7 @@ async function syncFromEtsy() {
     banner.innerHTML='<span>⚠️</span><span>Sync nahi hua (Etsy CORS block karta hai browser pe). Manually product add karo below.</span>';
   }
   renderAll();
-  setTimeout(()=>{ banner.style.display='none'; dot.className='sync-dot'; st.textContent=_dbReady?'Cloud synced ✓':'Data saved locally'; },6000);
+  setTimeout(()=>{ banner.style.display='none'; dot.className='sync-dot'; st.textContent='Data saved locally'; },6000);
 }
 
 function parseEtsyListings(html) {
@@ -1263,7 +1182,7 @@ function closeMsgModalDirect(){document.getElementById('msgOverlay').classList.r
 function copyMsgAndMark(){
   navigator.clipboard.writeText(document.getElementById('msgArea').value).then(()=>{
     const cs=loadCustomers(), c=cs.find(x=>x.id===_mCustId);
-    if(c){if(_mStep==='step1')c.msg1Sent=true;if(_mStep==='step2')c.msg2Sent=true;if(_mStep==='step3')c.msg3Sent=true;saveCustomers(cs);upsertCustomer(c);}
+    if(c){if(_mStep==='step1')c.msg1Sent=true;if(_mStep==='step2')c.msg2Sent=true;if(_mStep==='step3')c.msg3Sent=true;_customers=cs;localStorage.setItem('esm_customers',JSON.stringify(cs));upsertCustomer(c);}
     toast('✅ Copied and marked as sent!'); closeMsgModalDirect(); renderAll();
   }).catch(()=>toast('Manual copy: Ctrl+A then Ctrl+C'));
 }
@@ -1298,10 +1217,10 @@ function confirmDeleteCustomer(id,name){
 }
 function closeConfirmModal(e){if(e.target===document.getElementById('confirmOverlay'))closeConfirmModalDirect();}
 function closeConfirmModalDirect(){document.getElementById('confirmOverlay').classList.remove('open');_delId=null;}
-function confirmDeleteAction(){
+async function confirmDeleteAction(){
   if(!_delId)return;
   const cs=loadCustomers(); const i=cs.findIndex(c=>c.id===_delId);
-  if(i!==-1){cs.splice(i,1);saveCustomers(cs);deleteCustomerFromDB(_delId);}
+  if(i!==-1){cs.splice(i,1);_customers=cs;localStorage.setItem('esm_customers',JSON.stringify(cs));await deleteCustomerFromDB(_delId);}
   closeConfirmModalDirect(); toast('🗑️ Customer deleted.'); renderAll();
 }
 
@@ -1327,9 +1246,9 @@ async function addCustomer(){
   document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
   gotoTab('reminders'); renderAll();
 }
-function markReviewDone(id){
+async function markReviewDone(id){
   const cs=loadCustomers(),c=cs.find(x=>x.id===id);
-  if(c){c.reviewDone=true;saveCustomers(cs);upsertCustomer(c);toast('🎉 Review marked!');renderAll();}
+  if(c){c.reviewDone=true;_customers=cs;localStorage.setItem('esm_customers',JSON.stringify(cs));await upsertCustomer(c);toast('🎉 Review marked!');renderAll();}
 }
 function exportCSV(){
   const cs=loadCustomers(),ps=loadProducts();
@@ -1561,25 +1480,8 @@ function renderAll(){
 // ─── INIT ──────────────────────────────────────────────────────────────────
 document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
 initGreeting();
-renderAll(); // Turant local data dikhao
-initDB();    // Phir Supabase se sync karo
-
-// Auto-refresh cloud data har 60 seconds
-setInterval(() => { if (_dbReady) loadAllFromCloud(); }, 60000);
-
-// Mobile: pinch zoom band karo
-document.addEventListener('touchstart', function(e) {
-  if (e.touches.length > 1) e.preventDefault();
-}, { passive: false });
-document.addEventListener('touchmove', function(e) {
-  if (e.touches.length > 1) e.preventDefault();
-}, { passive: false });
-let lastTap = 0;
-document.addEventListener('touchend', function(e) {
-  const now = Date.now();
-  if (now - lastTap < 300) e.preventDefault();
-  lastTap = now;
-}, { passive: false });
+renderAll(); // show UI immediately with local data
+initDB();   // then connect to Supabase in background
 </script>
 </body>
 </html>
