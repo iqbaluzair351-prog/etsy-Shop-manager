@@ -804,16 +804,21 @@ const SB_URL = 'https://ahrthihtkczxymzpcwly.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFocnRoaWh0a2N6eHltenBjd2x5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MjA1MzMsImV4cCI6MjA5NDM5NjUzM30.hgcRZ0d4E0dl_0BpFwzVoviHuBURsmyFmp3-KGR69uA';
 
 async function sbFetch(path, opts={}) {
-  const res = await fetch(SB_URL + '/rest/v1/' + path, {
-    headers: {
-      'apikey': SB_KEY,
-      'Authorization': 'Bearer ' + SB_KEY,
-      'Content-Type': 'application/json',
-      'Prefer': opts.prefer || 'return=representation',
-      ...opts.headers
-    },
-    ...opts
-  });
+  const method = opts.method || 'GET';
+  const extraHeaders = opts.headers || {};
+  const prefer = extraHeaders['Prefer'] || opts.prefer || '';
+  
+  const headers = {
+    'apikey': SB_KEY,
+    'Authorization': 'Bearer ' + SB_KEY,
+    'Content-Type': 'application/json',
+  };
+  if (prefer) headers['Prefer'] = prefer;
+
+  const fetchOpts = { method, headers };
+  if (opts.body) fetchOpts.body = opts.body;
+
+  const res = await fetch(SB_URL + '/rest/v1/' + path, fetchOpts);
   if (!res.ok) {
     const err = await res.text();
     throw new Error(err);
@@ -833,7 +838,7 @@ async function initDB() {
   setSyncStatus('connecting', 'Supabase se connect ho raha hai...');
   try {
     // Test customers table
-    await sbFetch('customers?limit=1', { method: 'GET', prefer: '' });
+    await sbFetch('customers?limit=1', { method: 'GET' });
     _dbReady = true;
     setSyncStatus('ok', 'Cloud se connected ✓');
     await loadAllFromCloud();
@@ -913,8 +918,8 @@ async function loadAllFromCloud() {
   try {
     setSyncStatus('syncing', 'Data load ho raha hai...');
     const [custs, prods] = await Promise.all([
-      sbFetch('customers?order=created_at.desc', { method:'GET', prefer:'' }),
-      sbFetch('custom_products?order=created_at.desc', { method:'GET', prefer:'' })
+      sbFetch('customers?order=created_at.desc', { method:'GET' }),
+      sbFetch('custom_products?order=created_at.desc', { method:'GET' })
     ]);
     _customers = custs.map(r=>({
       id: r.id, name: r.name, user: r.username||'',
@@ -994,7 +999,7 @@ async function upsertCustomer(c) {
   try {
     await sbFetch('customers', {
       method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates' },
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
       body: JSON.stringify({
         id: c.id, name: c.name, username: c.user||'',
         product_id: c.productId||'', product_name: c.productName||'',
@@ -1004,13 +1009,17 @@ async function upsertCustomer(c) {
         msg3_sent: c.msg3Sent||false, review_done: c.reviewDone||false
       })
     });
-  } catch(e) { console.error('Upsert customer error:', e); }
+    setSyncStatus('ok', 'Cloud synced ✓ ' + new Date().toLocaleTimeString());
+  } catch(e) {
+    console.error('Upsert customer error:', e);
+    setSyncStatus('error', 'Save failed: ' + e.message);
+  }
 }
 
 async function deleteCustomerFromDB(id) {
   if (!_dbReady) return;
   try {
-    await sbFetch('customers?id=eq.'+id, { method: 'DELETE', prefer: '' });
+    await sbFetch('customers?id=eq.'+id, { method: 'DELETE', headers:{'Prefer':'return=minimal'} });
   } catch(e) { console.error('Delete error:', e); }
 }
 
